@@ -1,3 +1,6 @@
+# OS
+.DS_Store
+
 # Logs
 logs
 *.log
@@ -40,8 +43,6 @@ build/Release
 # Dependency directories
 node_modules/
 jspm_packages/
-
-# Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
 
 # TypeScript cache
@@ -49,13 +50,10 @@ web_modules/
 
 # Optional npm cache directory
 .npm
-
 # Optional eslint cache
 .eslintcache
-
 # Optional stylelint cache
 .stylelintcache
-
 # Optional REPL history
 .node_repl_history
 
@@ -84,8 +82,6 @@ dist
 
 # Gatsby files
 .cache/
-# Comment in the public line in if your project uses Gatsby and not Next.js
-# https://nextjs.org/blog/next-9-1#public-directory-support
 # public
 
 # vuepress build output
@@ -93,15 +89,12 @@ dist
 
 # vuepress v2.x temp and cache directory
 .temp
-.cache
 
 # Sveltekit cache directory
 .svelte-kit/
 
 # vitepress build output
 **/.vitepress/dist
-
-# vitepress cache directory
 **/.vitepress/cache
 
 # Docusaurus cache and generated files
@@ -137,3 +130,12 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+vite.config.ts.timestamp-*
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+storageState.json
