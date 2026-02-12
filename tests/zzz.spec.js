@@ -1,50 +1,70 @@
+// tests/send-full-mail-pom.spec.js
 import { test, expect } from "@playwright/test";
+import { NewEmailCompose } from "../pages/outlook/NewEmailCompose.js";
+import { MailFolders } from "../pages/components/mailFolders.js";
 
-test("Send email from Outlook", async ({ page }) => {
-  await page.goto("https://outlook.live.com/mail/", {waitUntil: "domcontentloaded",});
+test("Outlook - Send full email (TO + CC + BCC + Subject + Body) - POM", async ({ page }) => {
+  test.setTimeout(180_000);
+
+  await page.goto("https://outlook.live.com/mail/", { waitUntil: "domcontentloaded" });
   await expect(page).toHaveURL(/outlook\.live\.com\/mail/i);
 
-  // New mail
-  const newMailButton = page.getByRole("button", {name: /new mail|new email/i,});
-  await newMailButton.waitFor({ state: "visible", timeout: 30_000 });
-  await newMailButton.click();
+  /**
+   * This test uses Page Objects to keep the flow readable:
+   * - open compose
+   * - fill TO/CC/BCC, subject and body
+   * - send
+   * - verify the message appears in Sent Items
+   */
+  const compose = new NewEmailCompose(page);
+  const mailFolders = new MailFolders(page);
 
-  // (Opcionalno) čekaj da se compose pojavi
-  const body = page.getByLabel(/message body/i);
-  await expect(body).toBeVisible({ timeout: 30_000 });
+  const TO = "test@example.com";
+  const CC = "cc@example.com";
+  const BCC = "bcc@example.com";
 
-  // 3. TO (ne klikći "To" dugme - otvara popup)
-  // klikni u prazno polje desno od "To", pa kucaj
-  const toWell = page.locator("#recipient-well-label-to").locator("xpath=../..");
+  const SUBJECT = `Playwright full send ${Date.now()}`;
+  const BODY = "Ovo je test poruka sa TO + CC + BCC.";
 
-  // klikni malo desno od "To" da aktivira recipient input
-  await toWell.click({ position: { x: 140, y: 20 }, force: true });
+  await compose.openNewMail();
 
-  // kucaj kao korisnik (Outlook često ignoriše fill)
-  await page.keyboard.type("test@example.com", { delay: 30 });
-  await page.keyboard.press("Enter");
+  // Recipients must be committed row-by-row because Outlook can keep focus in the wrong field.
+  await compose.to.add(TO);
+  await compose.cc.add(CC);
+  await compose.bcc.add(BCC);
 
-  // (opciono) potvrdi da se recipient pojavio
-  await expect(page.getByText("test@example.com")).toBeVisible({timeout: 10_000,});
+  // Fill subject and body content.
+  await compose.subject.set(SUBJECT);
+  await compose.body.set(BODY);
 
-  // Subject
-  const subjectText = page.getByRole("textbox", {name: /add a subject|subject/i,});
-  await subjectText.fill("Playwright test email");
+  // Send the email.
+  await compose.send.click();
 
-  // Body
-  await body.click();
-  await body.fill("Hello 👋\n\nThis email was sent by Playwright automation.");
+  // Small delay to allow Outlook to finish post-send UI transitions.
+  await page.waitForTimeout(4000);
 
-  // Send
-  await page.getByRole("button", { name: /^send$/i }).click();
+  /**
+   * Verification:
+   * - Open Sent Items
+   * - Select the first message in the message list
+   * - Assert that the details pane contains the expected subject
+   */
+  await mailFolders.open("Sent Items");
 
-  // ---- Verification: Sent Items contains the subject ----
-  // This is much more reliable than toast text on Outlook.
-  const sentFolder = page.getByRole("treeitem", { name: /sent items|poslate/i }).first();
-  await expect(sentFolder).toBeVisible({ timeout: 30_000 });
-  await sentFolder.click();
+  const messageList = page.getByRole("listbox", { name: /message list/i });
+  await expect(messageList).toBeVisible({ timeout: 30_000 });
 
-  // message list should show the subject
-  await expect(page.getByText(subjectText).first()).toBeVisible({timeout: 30_000,});
+  const firstOption = messageList.locator('[role="option"]').first();
+  await expect(firstOption).toBeVisible({ timeout: 30_000 });
+
+  // Click inside the row to avoid edge cases where click lands on a non-interactive region.
+  await firstOption.click({ force: true, position: { x: 60, y: 40 } });
+
+  await expect(firstOption).toHaveAttribute("aria-selected", "true", {
+    timeout: 30_000,
+  });
+
+  await expect(
+    page.getByRole("main").getByText(SUBJECT, { exact: true }).first()
+  ).toBeVisible({ timeout: 30_000 });
 });
-

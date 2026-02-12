@@ -2,36 +2,52 @@ import { test, expect } from "@playwright/test";
 import { MailFolders } from "../pages/components/mailFolders.js";
 import { Folders } from "../pages/constants/folders.js";
 
-test('Delete draft email with subject "Random"', async ({ page }) => {
-  // 1️⃣ Otvori Outlook
+/**
+ * Deletes an existing email from a specific folder.
+ *
+ * Precondition:
+ * A message with the expected subject must already exist
+ * in the target folder before this test runs.
+ * This test does not create test data.
+ */
+test('Delete email with subject "Hello from Playwright"', async ({ page }) => {
   await page.goto("https://outlook.live.com/mail/", {
     waitUntil: "domcontentloaded",
   });
 
-  await expect(page.getByRole("button", { name: /new email/i }))
-    .toBeVisible({ timeout: 45_000 });
+  await expect(page.getByRole("button", { name: /new email/i })).toBeVisible({
+    timeout: 45_000,
+  });
 
-  // 2️⃣ Otvori Drafts folder
+  /**
+   * Open the target folder.
+   * The message to be deleted must already exist in this folder.
+   */
   const mailFolders = new MailFolders(page);
-  await mailFolders.open(Folders.Drafts);
+  await mailFolders.open(Folders.SentItems);
 
-  // 3️⃣ Pronađi mail sa subjectom "Random"
+  /**
+   * Locate the message by subject.
+   * If it does not exist, the test should fail.
+   */
   const draftMail = page
-    .getByRole("option", { name: /random/i })
+    .getByRole("option", { name: /Hello from Playwright/i })
     .first();
 
   await expect(draftMail).toBeVisible({ timeout: 30_000 });
 
-  // 4️⃣ Desni klik (context menu)
+  /**
+   * Open context menu and select Delete.
+   */
   await draftMail.click({ button: "right" });
 
-  // 5️⃣ Klik na Delete iz context menija
   const deleteOption = page.getByRole("menuitem", { name: /delete/i });
   await expect(deleteOption).toBeVisible({ timeout: 10_000 });
   await deleteOption.click();
 
-  // 6️⃣ Verifikacija: mail više ne postoji u Drafts
-  await expect(
-    page.getByRole("option", { name: /random/i })
-  ).toHaveCount(0);
+  /**
+   * Verification:
+   * Ensure the message no longer appears in the current folder.
+   */
+  await expect(page.getByRole("option", { name: /random/i })).toHaveCount(0);
 });

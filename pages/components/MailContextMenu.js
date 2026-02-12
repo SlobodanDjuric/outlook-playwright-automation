@@ -1,12 +1,30 @@
 import { expect } from "@playwright/test";
 
+/**
+ * MailContextMenu
+ * ----------------
+ * Page Object representing the right-click context menu
+ * for email items in the Outlook message list.
+ *
+ * Provides a simple API to:
+ * - open the context menu for a specific email (by subject)
+ * - select an action from the context menu (Delete, Archive, Flag, etc.)
+ *
+ * This abstraction keeps tests clean and avoids repeating
+ * low-level locator logic.
+ */
 export class MailContextMenu {
   constructor(page) {
     this.page = page;
   }
 
   /**
-   * Otvori context menu za mail po subjectu
+   * Opens the context menu for a specific email
+   * identified by its subject.
+   *
+   * The method:
+   * 1. Locates the email row using ARIA role "option"
+   * 2. Performs a right-click on it
    */
   async openForSubject(subject) {
     const mailItem = this.page
@@ -18,7 +36,12 @@ export class MailContextMenu {
   }
 
   /**
-   * Klik na opciju iz context menija (Delete, Flag, Archive, ...)
+   * Selects an action from the opened context menu.
+   *
+   * Example actions:
+   * - "Delete"
+   * - "Archive"
+   * - "Flag"
    */
   async selectOption(optionName) {
     const option = this.page.getByRole("menuitem", {
@@ -30,7 +53,11 @@ export class MailContextMenu {
   }
 
   /**
-   * Shortcut metoda (jedan poziv u testu)
+   * Convenience method for performing a full action
+   * in a single call from the test.
+   *
+   * Example:
+   *   await contextMenu.applyActionToMail("Test Subject", "Delete");
    */
   async applyActionToMail(subject, action) {
     await this.openForSubject(subject);
