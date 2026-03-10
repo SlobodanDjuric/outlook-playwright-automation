@@ -1,6 +1,6 @@
 // pages/outlook/eventService.js
-import { CalendarNavigation } from "../components/CalendarNavigation.js";
-import { NewEventCompose } from "./NewEventCompose.js";
+import { CalendarNavigation } from '../components/CalendarNavigation.js';
+import { NewEventCompose } from './NewEventCompose.js';
 
 /**
  * EventService
@@ -38,15 +38,7 @@ export class EventService {
    * }
    */
   async createAndSend(payload) {
-    const {
-      title,
-      attendee,
-      startDate,
-      startTime,
-      endTime,
-      location = "",
-      body = "",
-    } = payload;
+    const { title, attendee, startDate, startTime, endTime, location = '', body = '' } = payload;
 
     // Navigate to Calendar and open New Event dialog
     await this.nav.goToCalendar();
@@ -58,12 +50,13 @@ export class EventService {
     await this.compose.fillTitle(title);
     await this.compose.addRequiredAttendee(attendee);
 
-    // Date and time configuration
-    await this.compose.openTimeDropdown();
-    await this.compose.setStartDate(startDate);
-    await this.compose.setStartTime(startTime);
-    await this.compose.setEndTime(endTime);
-    await this.compose.closeTimeDropdown();
+    // Date and time configuration - use the new helper exposed under
+    // eventDetails so we avoid relying on removed legacy methods.
+    const time = this.compose.eventDetails.openTimeDropdown;
+    await time.setStartDate(startDate);
+    await time.setStartTime(startTime);
+    await time.setEndTime(endTime);
+    await time.close();
 
     // Optional fields
     if (location) await this.compose.setLocation(location);

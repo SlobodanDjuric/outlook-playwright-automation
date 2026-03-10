@@ -1,4 +1,4 @@
-import { expect } from "@playwright/test";
+import { expect } from '@playwright/test';
 
 /**
  * MailContextMenu
@@ -27,12 +27,10 @@ export class MailContextMenu {
    * 2. Performs a right-click on it
    */
   async openForSubject(subject) {
-    const mailItem = this.page
-      .getByRole("option", { name: new RegExp(subject, "i") })
-      .first();
+    const mailItem = this.page.getByRole('option', { name: new RegExp(subject, 'i') }).first();
 
     await expect(mailItem).toBeVisible({ timeout: 30_000 });
-    await mailItem.click({ button: "right" });
+    await mailItem.click({ button: 'right' });
   }
 
   /**
@@ -44,8 +42,8 @@ export class MailContextMenu {
    * - "Flag"
    */
   async selectOption(optionName) {
-    const option = this.page.getByRole("menuitem", {
-      name: new RegExp(optionName, "i"),
+    const option = this.page.getByRole('menuitem', {
+      name: new RegExp(optionName, 'i'),
     });
 
     await expect(option).toBeVisible({ timeout: 10_000 });

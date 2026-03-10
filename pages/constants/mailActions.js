@@ -15,38 +15,38 @@
  */
 export const MailContextActions = Object.freeze({
   // Reply actions
-  Reply: "Reply",
-  ReplyAll: "Reply all",
-  Forward: "Forward",
+  Reply: 'Reply',
+  ReplyAll: 'Reply all',
+  Forward: 'Forward',
 
   // Basic message management
-  Delete: "Delete",
-  Archive: "Archive",
+  Delete: 'Delete',
+  Archive: 'Archive',
 
   // Move operations
-  Move: "Move",
-  Copy: "Copy",
+  Move: 'Move',
+  Copy: 'Copy',
 
   // Message state actions
-  MarkAsUnread: "Mark as unread",
-  Pin: "Pin",
-  Categorize: "Categorise", // UK spelling in Outlook UI
-  Flag: "Flag",
-  Snooze: "Snooze",
+  MarkAsUnread: 'Mark as unread',
+  Pin: 'Pin',
+  Categorize: 'Categorise', // UK spelling in Outlook UI
+  Flag: 'Flag',
+  Snooze: 'Snooze',
 
   // Rules & automation
-  Rules: "Rules",
+  Rules: 'Rules',
 
   // Safety & filtering
-  Report: "Report",
-  Block: "Block",
-  Ignore: "Ignore",
+  Report: 'Report',
+  Block: 'Block',
+  Ignore: 'Ignore',
 
   // Additional utilities
-  Download: "Download",
-  FindRelated: "Find related",
-  View: "View",
+  Download: 'Download',
+  FindRelated: 'Find related',
+  View: 'View',
 
   // Advanced submenu
-  AdvancedActions: "Advanced actions",
+  AdvancedActions: 'Advanced actions',
 });

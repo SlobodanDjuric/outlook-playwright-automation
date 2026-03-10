@@ -11,12 +11,12 @@
  * Object.freeze ensures folder names cannot be modified at runtime.
  */
 export const Folders = Object.freeze({
-  Inbox: "Inbox",
-  Drafts: "Drafts",
-  SentItems: "Sent Items",
-  DeletedItems: "Deleted Items",
-  JunkEmail: "Junk Email",
-  Archive: "Archive",
-  ConversationHistory: "Conversation History",
-  Notes: "Notes",
+  Inbox: 'Inbox',
+  Drafts: 'Drafts',
+  SentItems: 'Sent Items',
+  DeletedItems: 'Deleted Items',
+  JunkEmail: 'Junk Email',
+  Archive: 'Archive',
+  ConversationHistory: 'Conversation History',
+  Notes: 'Notes',
 });

@@ -1,15 +1,15 @@
-import { test, expect } from "@playwright/test";
-import { MailFolders } from "../pages/components/mailFolders.js";
-import { Folders } from "../pages/constants/folders.js";
+import { test, expect } from '@playwright/test';
+import { MailFolders } from '../../pages/components/mailFolders.js';
+import { Folders } from '../../pages/constants/folders.js';
 
 test('Select "Sent Items" folder and verify it is opened', async ({ page }) => {
-  await page.goto("https://outlook.live.com/mail/", {
-    waitUntil: "domcontentloaded",
+  await page.goto('https://outlook.live.com/mail/', {
+    waitUntil: 'domcontentloaded',
   });
   await expect(page).toHaveURL(/outlook\.live\.com\/mail/i);
 
   // ✅ čekaj da se mailbox UI učita (da nismo na login/loader)
-  await expect(page.getByRole("button", { name: /new email/i })).toBeVisible({
+  await expect(page.getByRole('button', { name: /new email/i })).toBeVisible({
     timeout: 45_000,
   });
 

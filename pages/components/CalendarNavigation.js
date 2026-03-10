@@ -1,6 +1,6 @@
 // pages/components/CalendarNavigation.js
-import { expect } from "@playwright/test";
-import { CalendarActions } from "../constants/calendarActions.js";
+import { expect } from '@playwright/test';
+import { CalendarActions } from '../constants/calendarActions.js';
 
 /**
  * CalendarNavigation
@@ -22,9 +22,7 @@ export class CalendarNavigation {
    * Works when starting from the Mail page.
    */
   async goToCalendar() {
-    const calendarNav = this.page
-      .locator('button[aria-label*="Calendar" i], a[aria-label*="Calendar" i]')
-      .first();
+    const calendarNav = this.page.locator('button[aria-label*="Calendar" i], a[aria-label*="Calendar" i]').first();
 
     await expect(calendarNav).toBeVisible({ timeout: 45_000 });
     await calendarNav.click();
@@ -35,12 +33,28 @@ export class CalendarNavigation {
    */
   async clickNewEvent() {
     const newEventBtn = this.page
-      .getByRole("button", {
-        name: new RegExp(`^${CalendarActions.NewEvent}$`, "i"),
+      .getByRole('button', {
+        name: new RegExp(`^${CalendarActions.NewEvent}$`, 'i'),
       })
       .first();
 
     await expect(newEventBtn).toBeVisible({ timeout: 45_000 });
-    await newEventBtn.click();
+    // occasionally a tooltip overlays the button; force clicking avoids
+    // intermittent "intercepts pointer events" errors seen in CI.
+    await this.page.waitForTimeout(150);
+
+    // Click and then ensure the compose dialog actually appears.  In the past
+    // the click would silently fail / be swallowed by the UI when a tooltip
+    // was present, leading to tests hanging downstream.
+    await newEventBtn.click({ force: true });
+
+    const titleInput = this.page.getByPlaceholder('Add title').first();
+    try {
+      await expect(titleInput).toBeVisible({ timeout: 5_000 });
+    } catch (e) {
+      // second attempt if the first click didn't open the dialog
+      await newEventBtn.click({ force: true });
+      await expect(titleInput).toBeVisible({ timeout: 45_000 });
+    }
   }
 }

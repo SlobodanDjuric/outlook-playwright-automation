@@ -1,4 +1,4 @@
-import { expect } from "@playwright/test";
+import { expect } from '@playwright/test';
 
 /**
  * MailFolders
@@ -26,22 +26,15 @@ export class MailFolders {
    * This avoids flaky failures during initial load / transitions.
    */
   async waitUntilReady() {
-    const newEmail = this.page.getByRole("button", { name: /new email/i });
-    const folderTree = this.page.getByRole("tree").first();
+    const newEmail = this.page.getByRole('button', { name: /new email/i });
+    const folderTree = this.page.getByRole('tree').first();
 
-    await Promise.race([
-      newEmail.waitFor({ state: "visible", timeout: 45_000 }).catch(() => {}),
-      folderTree.waitFor({ state: "visible", timeout: 45_000 }).catch(() => {}),
-    ]);
+    await Promise.race([newEmail.waitFor({ state: 'visible', timeout: 45_000 }).catch(() => {}), folderTree.waitFor({ state: 'visible', timeout: 45_000 }).catch(() => {})]);
 
-    const ok =
-      (await newEmail.isVisible().catch(() => false)) ||
-      (await folderTree.isVisible().catch(() => false));
+    const ok = (await newEmail.isVisible().catch(() => false)) || (await folderTree.isVisible().catch(() => false));
 
     if (!ok) {
-      throw new Error(
-        "Outlook UI not ready (Mail or folder tree not visible)."
-      );
+      throw new Error('Outlook UI not ready (Mail or folder tree not visible).');
     }
   }
 
@@ -56,15 +49,13 @@ export class MailFolders {
   async open(folderName) {
     await this.waitUntilReady();
 
-    const nameRx = new RegExp(escapeRegExp(folderName), "i");
+    const nameRx = new RegExp(escapeRegExp(folderName), 'i');
 
-    const tree = this.page.getByRole("tree").first();
-    const items = tree.getByRole("treeitem", { name: nameRx });
+    const tree = this.page.getByRole('tree').first();
+    const items = tree.getByRole('treeitem', { name: nameRx });
 
     // Fallback: in some renders, the treeitem can be found outside the first tree container
-    const candidates = (await items.count())
-      ? items
-      : this.page.getByRole("treeitem", { name: nameRx });
+    const candidates = (await items.count()) ? items : this.page.getByRole('treeitem', { name: nameRx });
 
     const count = await candidates.count();
     if (!count) throw new Error(`Folder not found: ${folderName}`);
@@ -73,8 +64,7 @@ export class MailFolders {
     let toClick = candidates.nth(0);
     for (let i = 0; i < count; i++) {
       const el = candidates.nth(i);
-      const selected =
-        (await el.getAttribute("aria-selected"))?.toLowerCase() === "true";
+      const selected = (await el.getAttribute('aria-selected'))?.toLowerCase() === 'true';
       if (!selected) {
         toClick = el;
         break;
@@ -92,9 +82,7 @@ export class MailFolders {
           const c = await candidates.count();
           for (let i = 0; i < c; i++) {
             const el = candidates.nth(i);
-            const selected =
-              (await el.getAttribute("aria-selected"))?.toLowerCase() ===
-              "true";
+            const selected = (await el.getAttribute('aria-selected'))?.toLowerCase() === 'true';
             if (selected) return true;
           }
           return false;
@@ -119,7 +107,7 @@ export class MailFolders {
    * Returns the locator for the selected row.
    */
   async selectMessageBySubject(subject, { timeout = 60_000 } = {}) {
-    const list = this.page.getByRole("listbox", { name: /message list/i });
+    const list = this.page.getByRole('listbox', { name: /message list/i });
     await expect(list).toBeVisible({ timeout: 30_000 });
 
     const endAt = Date.now() + timeout;
@@ -130,7 +118,7 @@ export class MailFolders {
 
       for (let i = 0; i < count; i++) {
         const row = options.nth(i);
-        const text = (await row.innerText().catch(() => "")) || "";
+        const text = (await row.innerText().catch(() => '')) || '';
 
         if (text.toLowerCase().includes(subject.toLowerCase())) {
           await row.scrollIntoViewIfNeeded();
@@ -138,7 +126,7 @@ export class MailFolders {
           // Click inside the row to avoid edge cases where click lands on a non-interactive region
           await row.click({ force: true, position: { x: 60, y: 40 } });
 
-          await expect(row).toHaveAttribute("aria-selected", "true", {
+          await expect(row).toHaveAttribute('aria-selected', 'true', {
             timeout: 30_000,
           });
 
@@ -148,7 +136,7 @@ export class MailFolders {
 
       // Virtualized list: scroll further down and try again
       await list.focus();
-      await this.page.keyboard.press("PageDown");
+      await this.page.keyboard.press('PageDown');
       await this.page.waitForTimeout(250);
     }
 
@@ -170,5 +158,5 @@ export class MailFolders {
  * Escapes a string so it can be safely used inside a RegExp constructor.
  */
 function escapeRegExp(str) {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

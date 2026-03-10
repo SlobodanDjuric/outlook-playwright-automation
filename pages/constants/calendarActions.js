@@ -11,6 +11,6 @@
  *   page.getByRole("button", { name: CalendarActions.NewEvent })
  */
 export const CalendarActions = Object.freeze({
-  NewEvent: "New event",
-  Send: "Send",
+  NewEvent: 'New event',
+  Send: 'Send',
 });

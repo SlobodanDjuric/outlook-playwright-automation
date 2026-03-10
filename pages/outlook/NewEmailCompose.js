@@ -1,4 +1,4 @@
-import { expect } from "@playwright/test";
+import { expect } from '@playwright/test';
 
 /**
  * NewEmailCompose
@@ -23,11 +23,9 @@ export class NewEmailCompose {
     this.send = new SendButton(page);
 
     // Recipient fields (TO is always visible, CC/BCC may need to be expanded)
-    this.to = new RecipientWellField(page, "TO");
-    this.cc = new RecipientWellField(page, "CC", () => this.ensureCcVisible());
-    this.bcc = new RecipientWellField(page, "BCC", () =>
-      this.ensureBccVisible()
-    );
+    this.to = new RecipientWellField(page, 'TO');
+    this.cc = new RecipientWellField(page, 'CC', () => this.ensureCcVisible());
+    this.bcc = new RecipientWellField(page, 'BCC', () => this.ensureBccVisible());
 
     // Subject and Body fields
     this.subject = new SubjectField(page);
@@ -38,11 +36,11 @@ export class NewEmailCompose {
    * Opens a new email and waits until the body editor is visible.
    */
   async openNewMail() {
-    const newMailButton = this.page.getByRole("button", {
+    const newMailButton = this.page.getByRole('button', {
       name: /new mail|new email/i,
     });
 
-    await newMailButton.waitFor({ state: "visible", timeout: 45_000 });
+    await newMailButton.waitFor({ state: 'visible', timeout: 45_000 });
     await newMailButton.click();
 
     await expect(this.body.root()).toBeVisible({ timeout: 30_000 });
@@ -53,7 +51,7 @@ export class NewEmailCompose {
    * If not, clicks the CC toggle button.
    */
   async ensureCcVisible() {
-    const ccBtn = this.page.getByRole("button", { name: /^cc$/i }).first();
+    const ccBtn = this.page.getByRole('button', { name: /^cc$/i }).first();
 
     const alreadyVisible = await this.page
       .locator('div[id$="_CC"]')
@@ -76,7 +74,7 @@ export class NewEmailCompose {
    * If not, clicks the BCC toggle button.
    */
   async ensureBccVisible() {
-    const bccBtn = this.page.getByRole("button", { name: /^bcc$/i }).first();
+    const bccBtn = this.page.getByRole('button', { name: /^bcc$/i }).first();
 
     const alreadyVisible = await this.page
       .locator('div[id$="_BCC"]')
@@ -108,7 +106,7 @@ class SendButton {
   }
 
   button() {
-    return this.page.getByRole("button", { name: /^send$/i }).first();
+    return this.page.getByRole('button', { name: /^send$/i }).first();
   }
 
   async click() {
@@ -161,8 +159,8 @@ class RecipientWellField {
     const container = this.container();
     const editor = this.editor();
 
-    await container.waitFor({ state: "visible", timeout: 15_000 });
-    await editor.waitFor({ state: "visible", timeout: 15_000 });
+    await container.waitFor({ state: 'visible', timeout: 15_000 });
+    await editor.waitFor({ state: 'visible', timeout: 15_000 });
 
     for (let i = 0; i < 4; i++) {
       await editor.click({ force: true });
@@ -179,9 +177,7 @@ class RecipientWellField {
       await this.page.waitForTimeout(150);
     }
 
-    throw new Error(
-      `Could not focus recipient editor for "${this.kind}". Focus stayed in another row.`
-    );
+    throw new Error(`Could not focus recipient editor for "${this.kind}". Focus stayed in another row.`);
   }
 
   /**
@@ -190,7 +186,7 @@ class RecipientWellField {
   async add(email) {
     await this.focus();
     await this.page.keyboard.type(email, { delay: 25 });
-    await this.page.keyboard.press("Enter");
+    await this.page.keyboard.press('Enter');
   }
 
   /**
