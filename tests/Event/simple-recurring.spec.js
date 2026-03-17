@@ -25,32 +25,25 @@ test('open event and click Recurring button', async ({ page }) => {
   // using the new MakeRecurring class directly to manage recurrence options
   const recurHelper = await event.makeRecurring.clickRecurrenceOption();
 
-  // as a final exercise, try to open the panel again and set the repeat
-  // interval to 3. if the recurrence options aren't exposed, we quietly
-  // ignore the error so the smoke test still passes.
-  try {
-    await time.ensureOpen();
-    await recurHelper.setRepeatEvery(3);
+  // set the repeat interval to 3 weeks — this must succeed
+  await time.ensureOpen();
+  await recurHelper.setRepeatEvery(3);
 
-    // neposredna provera: polje "Repeat every" treba da sadrži broj 3
-    const repeatInput = page.locator(CalendarFields.RepeatEveryInput);
-    const val = await repeatInput.inputValue();
-    console.log('repeat input value =', val);
-    await expect(repeatInput).toHaveValue('3', { timeout: 5000 });
+  // verify: "Interval" combobox must show 3
+  const repeatInput = page.locator(CalendarFields.RepeatEveryInput);
+  await expect(repeatInput).toBeVisible({ timeout: 10_000 });
+  const val = await repeatInput.textContent();
+  console.log('interval combobox value =', val?.trim());
+  expect(val?.trim()).toMatch(/^3/);
 
-    // confirm the visible recurrence summary mentions "3 weeks"
-    const summaryLocator = page.locator('text=/Occurs every 3 weeks/i');
-    const summaryText = await summaryLocator.textContent();
-    console.log('summary text =', summaryText);
-    await expect(summaryLocator).toBeVisible({ timeout: 5000 });
-  } catch (e) {
-    // recurrence panel wasn't available; not critical for this smoke check
-  }
-  // ensure the toolbar's Recurring/Series button reflects the toggle; this
-  // gives us a stable way to confirm the click succeeded without inspecting
-  // the inner panel.
+  // verify: recurrence summary must mention "3 weeks"
+  const summaryLocator = page.locator('button:has-text("3 week"), button[aria-label*="3 week" i]').first();
+  await expect(summaryLocator).toBeVisible({ timeout: 10_000 });
+  const summaryText = await summaryLocator.getAttribute('aria-label') ?? await summaryLocator.textContent();
+  console.log('summary text =', summaryText);
+
+  // ensure the toolbar's Recurring/Series button reflects the toggle
   const toolbarBtn = page.locator(CalendarFields.RecurringButton).first();
-  // toggle button uses role="radio" with aria-checked when active
   await expect(toolbarBtn).toHaveAttribute('aria-checked', 'true');
 
   // wait a little so any UI animation is visible

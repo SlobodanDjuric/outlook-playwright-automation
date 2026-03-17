@@ -18,7 +18,7 @@ test('Outlook Calendar - Create and send new event', async ({ page }) => {
   const TITLE = `Playwright Test Event ${Date.now()}`;
   const ATTENDEE = 'test@example.com';
   const LOCATION = 'Conference Room 3';
-  const EVENT_BODY = 'Ovo je test poruka za novi event kreirans pomoću Playwright-a.';
+  const EVENT_BODY = 'This is a test message for a new event created with Playwright.';
 
   // Helper: get the correct select-all keystroke based on OS
   const selectAllKey = process.platform === 'darwin' ? 'Meta+A' : 'Control+A';

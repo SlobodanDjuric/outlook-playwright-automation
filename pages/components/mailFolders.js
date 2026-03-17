@@ -155,6 +155,147 @@ export class MailFolders {
 }
 
 /**
+ * FolderToolbar
+ * -------------
+ * Encapsulates the mini-toolbar that appears above the message list when a
+ * folder is selected.  Buttons: Add to Favourites, Select, Jump to, Filter,
+ * Sort by date.
+ */
+class FolderToolbar {
+  constructor(page) {
+    this.page = page;
+  }
+
+  /** Clicks the "Favorite folder" toggle button (adds to Favourites). */
+  async addToFavourites() {
+    const btn = this.page
+      .getByRole('button', { name: /favou?rite folder/i })
+      .first();
+    await btn.waitFor({ state: 'visible', timeout: 10_000 });
+    await btn.click();
+    await this.page.waitForTimeout(500);
+  }
+
+  /** Clicks the "Favorite folder" toggle button again (removes from Favourites). */
+  async removeFromFavourites() {
+    const btn = this.page
+      .getByRole('button', { name: /favou?rite folder/i })
+      .first();
+    await btn.waitFor({ state: 'visible', timeout: 10_000 });
+    await btn.click();
+    await this.page.waitForTimeout(500);
+  }
+
+  /** Clicks the "Select" toolbar button to enter multi-select mode. */
+  async clickSelect() {
+    const btn = this.page
+      .getByRole('button', { name: /^select$/i })
+      .first();
+    await btn.waitFor({ state: 'visible', timeout: 10_000 });
+    await btn.click();
+    await this.page.waitForTimeout(400);
+  }
+
+  /**
+   * Opens the "Jump to" dropdown and clicks the given option.
+   * @param {string} option - e.g. 'Last month', 'Last week'
+   */
+  async jumpTo(option) {
+    const btn = this.page
+      .getByRole('button', { name: /jump to/i })
+      .first();
+    await btn.waitFor({ state: 'visible', timeout: 10_000 });
+    await btn.click();
+    await this.page.waitForTimeout(600);
+
+    const item = this.page
+      .getByRole('menuitemradio', { name: new RegExp(option, 'i') })
+      .first();
+    await item.waitFor({ state: 'visible', timeout: 8_000 });
+    await item.click();
+    await this.page.waitForTimeout(500);
+  }
+
+  /**
+   * Opens the "Filter" dropdown and selects the given filter option.
+   * @param {string} option - e.g. 'Unread', 'Flagged'
+   */
+  async filter(option) {
+    const btn = this.page
+      .getByRole('button', { name: /^filter$/i })
+      .first();
+    await btn.waitFor({ state: 'visible', timeout: 10_000 });
+    await btn.click();
+    await this.page.waitForTimeout(300);
+    const item = this.page
+      .getByRole('menuitemradio', { name: new RegExp(option, 'i') })
+      .first();
+    await item.waitFor({ state: 'visible', timeout: 5_000 });
+    await item.click();
+    await this.page.waitForTimeout(500);
+  }
+
+  /**
+   * Opens the "Sorted" dropdown and selects the given sort field.
+   * @param {string} option - e.g. 'Size', 'From', 'Subject'
+   */
+  async sortBy(option) {
+    const btn = this.page
+      .getByRole('button', { name: /sorted/i })
+      .first();
+    await btn.waitFor({ state: 'visible', timeout: 10_000 });
+    await btn.click();
+    await this.page.waitForTimeout(300);
+    const item = this.page
+      .getByRole('menuitemradio', { name: new RegExp(option, 'i') })
+      .first();
+    await item.waitFor({ state: 'visible', timeout: 5_000 });
+    await item.click();
+    await this.page.waitForTimeout(500);
+  }
+}
+
+/**
+ * MailFolder
+ * ----------
+ * High-level page object that combines folder navigation with the mini
+ * toolbar that sits above the message list.
+ *
+ * Usage:
+ *   const folder = new MailFolder(page);
+ *   await folder.open('Deleted Items');
+ *   await folder.toolbar.addToFavourites();
+ */
+export class MailFolder {
+  constructor(page) {
+    this.page = page;
+    this._folders = new MailFolders(page);
+    this.toolbar = new FolderToolbar(page);
+  }
+
+  /**
+   * Navigates to the given folder and waits until it is selected.
+   * @param {string} folderName - e.g. 'Deleted Items', 'Sent Items'
+   */
+  async open(folderName) {
+    await this._folders.open(folderName);
+  }
+
+  /**
+   * Returns the message list locator for the currently open folder.
+   * Useful for assertions on the visible messages.
+   */
+  get messageList() {
+    return this.page.getByRole('listbox', { name: /message list/i });
+  }
+
+  /** Returns all visible message-list option rows. */
+  get messageItems() {
+    return this.messageList.locator('[role="option"]');
+  }
+}
+
+/**
  * Escapes a string so it can be safely used inside a RegExp constructor.
  */
 function escapeRegExp(str) {

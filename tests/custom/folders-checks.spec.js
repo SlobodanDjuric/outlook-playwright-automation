@@ -8,17 +8,17 @@ test('Select "Sent Items" folder and verify it is opened', async ({ page }) => {
   });
   await expect(page).toHaveURL(/outlook\.live\.com\/mail/i);
 
-  // ✅ čekaj da se mailbox UI učita (da nismo na login/loader)
+  // wait for the mailbox UI to load (ensure we are past the login/loader screen)
   await expect(page.getByRole('button', { name: /new email/i })).toBeVisible({
     timeout: 45_000,
   });
 
   const mailFolders = new MailFolders(page);
 
-  // ✅ otvori folder preko klase
+  // open the folder via the MailFolders page object
   await mailFolders.open(Folders.SentItems);
 
-  // ✅ verifikacija: da se pojavi tekst "Sent Items" negde u glavnom panelu
+  // verify that "Sent Items" text appears somewhere in the main panel
   await expect(page.getByText(/sent items/i).first()).toBeVisible({
     timeout: 30_000,
   });

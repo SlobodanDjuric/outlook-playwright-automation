@@ -51,7 +51,7 @@ export const CalendarFields = Object.freeze({
   // optional attendees input that appears when the related menu item is clicked
   OptionalAttendeesEditable: '[aria-label="Invite optional attendees"][contenteditable="true"]',
 
-  RepeatEveryInput: 'input[aria-label*="repeat every" i]',
+  RepeatEveryInput: '[role="combobox"][aria-label*="interval" i]',
   RecurrenceFrequencyDropdown: 'select[aria-label*="repeat" i], [role="listbox"][aria-label*="repeat" i]',
   RecurrencePatternDropdown: '[aria-label*="pattern" i], [role="listbox"][aria-label*="pattern" i]',
   UntilDateInput: 'input[aria-label*="until" i], input[aria-label*="end date" i]',

@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { CalendarNavigation } from '../../pages/components/CalendarNavigation.js';
 import { NewEventCompose } from '../../pages/outlook/NewEventCompose.js';
+import { Status, Reminder, Privacy } from '../../pages/constants/calendarOptions.js';
 
 function pad2(n) {
   return String(n).padStart(2, '0');
@@ -53,23 +54,20 @@ test('Outlook Calendar - toolbar buttons (series/status/reminder/privacy)', asyn
   });
 
   await test.step('Cycle through status options', async () => {
-    const statuses = ['Free', 'Working elsewhere', 'Tentative', 'Busy', 'Out of office'];
-    for (const s of statuses) {
+    for (const s of Object.values(Status)) {
       await event.eventToolbar.setStatus(s);
     }
   });
 
   await test.step('Cycle through reminders', async () => {
-    const reminders = ["Don't remind me", 'At time of event', '5 minutes before', '15 minutes before', '30 minutes before', '1 hour before', '2 hours before', '12 hours before', '1 day before', '1 week before'];
-    for (const r of reminders) {
+    for (const r of Object.values(Reminder)) {
       await event.eventToolbar.setReminder(r);
     }
   });
 
   await test.step('Cycle through privacy options and save', async () => {
-    // Toggle between Private and Not private
-    await event.eventToolbar.setPrivacy('Private');
-    await event.eventToolbar.setPrivacy('Not private');
+    await event.eventToolbar.setPrivacy(Privacy.Private);
+    await event.eventToolbar.setPrivacy(Privacy.NotPrivate);
     await event.save();
   });
 });

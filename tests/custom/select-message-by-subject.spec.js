@@ -10,15 +10,14 @@ test('Find sent mail by subject', async ({ page }) => {
 
   const mailFolders = new MailFolders(page);
 
-  // 1️⃣ otvori Outlook
-  // 2️⃣ selektuj Sent Items
+  // open the Drafts folder
   await mailFolders.open('Drafts');
 
-  // 3️⃣ nadji i selektuj mail po subjectu
+  // find and select the message by subject
   const SUBJECT = 'Hello from Playwrighterrr';
   await mailFolders.selectMessageBySubject(SUBJECT);
 
-  // potvrda desno
+  // verify the subject appears in the reading pane
   await expect(page.getByRole('main').getByText(SUBJECT, { exact: true }).first()).toBeVisible({ timeout: 30_000 });
   await page.waitForTimeout(10000);
 });

@@ -18,7 +18,7 @@ test('Outlook - TO + CC + BCC + Subject + Body (verify rows, no send)', async ({
   const BCC = 'bcc@example.com';
 
   const SUBJECT = `Hello from Playwright ${Date.now()}`;
-  const BODY = 'Ovo je test poruka (TO + CC + BCC).';
+  const BODY = 'This is a test message (TO + CC + BCC).';
 
   // Helpers
   const emailRx = (email) => new RegExp(email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');

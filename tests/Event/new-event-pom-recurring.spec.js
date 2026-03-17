@@ -30,7 +30,7 @@ test('Outlook Calendar - Create recurring event (every 3 months on fourth Friday
   const START_TIME = '14:00';
   const END_TIME = '15:00';
   const LOCATION = 'Team Room';
-  const BODY = 'Ovo je rekurentni event koji se ponavlja svakih 3 meseca na četvrti petak.';
+  const BODY = 'This is a recurring event that repeats every 3 months on the fourth Friday.';
 
   // Recurrence settings
   const REPEAT_EVERY = 3; // every 3 months
@@ -82,7 +82,7 @@ test('Outlook Calendar - Create weekly recurring event (every 2 weeks) - POM', a
   const START_TIME = '10:00';
   const END_TIME = '10:30';
   const LOCATION = 'Standup Room';
-  const BODY = 'Nedeljni standup koji se ponavlja svakih 2 nedelje.';
+  const BODY = 'Weekly standup that repeats every 2 weeks.';
 
   const REPEAT_EVERY = 2;
   const FREQUENCY = 'Weeks';
@@ -127,7 +127,7 @@ test('Outlook Calendar - Create daily recurring event (every 5 days) - POM', asy
   const START_TIME = '09:00';
   const END_TIME = '09:15';
   const LOCATION = 'Virtual';
-  const BODY = 'Dnevni reminder koji se ponavlja svakih 5 dana.';
+  const BODY = 'Daily reminder that repeats every 5 days.';
 
   const REPEAT_EVERY = 5;
   const FREQUENCY = 'Days';

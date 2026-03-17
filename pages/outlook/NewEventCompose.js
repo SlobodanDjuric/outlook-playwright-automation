@@ -4,6 +4,8 @@ import { CalendarActions } from '../constants/calendarActions.js';
 import { CalendarFields } from '../constants/calendarFields.js';
 import { EventType, Status, Reminder, Privacy } from '../constants/calendarOptions.js';
 
+
+
 /**
  * NewEventCompose
  * ---------------
@@ -21,18 +23,36 @@ import { EventType, Status, Reminder, Privacy } from '../constants/calendarOptio
 // helper sub-classes for structured page object
 // ============================================================================
 
+/**
+ * EventToolbar
+ * ------------
+ * Wraps the toolbar buttons that appear at the top of the compose dialog:
+ * Series/Recurring toggle, Status (Busy/Free/…), Reminder, and Privacy.
+ */
 class EventToolbar {
   constructor(page) {
     this.page = page;
   }
 
+  /** Clicks the "Series" / "Recurring" toolbar button to convert the event into a series. */
   async clickSeriesButton() {
     const btn = this.page.locator(CalendarFields.RecurringButton).first();
     await btn.waitFor({ state: 'visible', timeout: 30_000 });
     await btn.click();
   }
 
+  /**
+   * Opens the status dropdown and selects the given option.
+   * @param {Status[keyof Status]} status - one of the Status constants:
+   *   Status.Free | Status.Busy | Status.Working_Elsewhere | Status.Tentative | Status.Out_Of_Office
+   */
   async setStatus(status) {
+    const allowed = Object.values(Status);
+    if (!allowed.includes(status)) {
+      throw new Error(
+        `Invalid status "${status}". Allowed values: ${allowed.map(v => `Status.${Object.keys(Status).find(k => Status[k] === v)}`).join(', ')}`
+      );
+    }
     const btn = this.page
       .getByRole('button', {
         name: /busy|free|working elsewhere|tentative|out of office/i,
@@ -46,24 +66,20 @@ class EventToolbar {
     } catch (e) {}
   }
 
-  // convenience shortcuts
-  async free() {
-    await this.setStatus('Free');
-  }
-  async busy() {
-    await this.setStatus('Busy');
-  }
-  async workingElsewhere() {
-    await this.setStatus('Working elsewhere');
-  }
-  async tentative() {
-    await this.setStatus('Tentative');
-  }
-  async outOfOffice() {
-    await this.setStatus('Out of office');
-  }
-
+  /**
+   * Opens the reminder dropdown and selects the given option.
+   * @param {Reminder[keyof Reminder]} optionText - one of the Reminder constants:
+   *   Reminder.DontRemindMe | Reminder.AtTimeOfEvent | Reminder.FiveMinutesBefore |
+   *   Reminder.FifteenMinutesBefore | Reminder.ThirtyMinutesBefore | Reminder.OneHourBefore |
+   *   Reminder.TwoHoursBefore | Reminder.TwelveHoursBefore | Reminder.OneDayBefore | Reminder.OneWeekBefore
+   */
   async setReminder(optionText) {
+    const allowed = Object.values(Reminder);
+    if (!allowed.includes(optionText)) {
+      throw new Error(
+        `Invalid reminder "${optionText}". Allowed values: ${allowed.map(v => `Reminder.${Object.keys(Reminder).find(k => Reminder[k] === v)}`).join(', ')}`
+      );
+    }
     const btn = this.page.locator(CalendarFields.ReminderButton).first();
     await btn.click();
     try {
@@ -73,6 +89,10 @@ class EventToolbar {
     } catch (e) {}
   }
 
+  /**
+   * Opens the privacy dropdown and selects the given option.
+   * @param {string} privacyOption - use Privacy.Private or Privacy.NotPrivate from constants
+   */
   async setPrivacy(privacyOption) {
     const btn = this.page.locator(CalendarFields.PrivacyButton).first();
     await btn.click();
@@ -124,6 +144,7 @@ class ResponseOptions {
     };
   }
 
+  /** Opens the "Response options" menu once; subsequent calls are no-ops. */
   async ensureOpen() {
     if (!this.opened) {
       const btn = this.page.locator(CalendarFields.ResponseOptionsButton).first();
@@ -134,6 +155,12 @@ class ResponseOptions {
     }
   }
 
+  /**
+   * Toggles a menu checkbox item to the desired state.
+   * Opens the menu first if it isn't already open.
+   * @param {string} label - partial label text of the menu item
+   * @param {boolean} enabled - desired checked state
+   */
   async _toggle(label, enabled) {
     await this.ensureOpen();
     const item = this.page
@@ -148,6 +175,7 @@ class ResponseOptions {
     }
   }
 
+  /** Opens the "Add optional attendees" menu item to reveal the optional field. */
   async addOptionalAttendees() {
     await this.ensureOpen();
     const opt = this.page.getByRole('menuitem', { name: /add optional attendees/i }).first();
@@ -157,13 +185,6 @@ class ResponseOptions {
   }
 }
 
-// ------------------------------------------------------------------------
-// helper class for the time/date dropdown (opened by clicking the
-// "HH:MM - HH:MM" line).  This is a stand‑alone class rather than a
-// nested declaration so it can be referenced by EventDetails without
-// syntactic problems.  The surface is deliberately narrow so editors
-// only autocomplete the supported operations.
-// ------------------------------------------------------------------------
 // ------------------------------------------------------------------------
 // helper class encapsulating interactions with the recurrence panel that
 // appears when the "Make recurring"/"Recurrence" option is clicked.  This
@@ -199,6 +220,10 @@ class MakeRecurring {
       },
       setRecurrenceUntil: async (date) => {
         await this.setRecurrenceUntil(date);
+        return helpers;
+      },
+      setWeeklyDays: async (days) => {
+        await this.setWeeklyDays(days);
         return helpers;
       },
     };
@@ -260,40 +285,89 @@ class MakeRecurring {
     throw new Error(`Could not find "Recurrence" option in the date/time panel. ` + `Available elements (first 15): ${JSON.stringify(availableElements, null, 2)}`);
   }
 
+  /**
+   * Sets the "Repeat every N" interval field.
+   * If the recurrence editor panel isn't visible yet, clicks the "Occurs every …"
+   * summary button first to reopen it.
+   * @param {number} count - interval value (e.g. 2 for "every 2 weeks")
+   */
   async setRepeatEvery(count) {
     await this.page.waitForTimeout(200);
-    const repeatInput = this.page.locator(CalendarFields.RepeatEveryInput);
-    await expect(repeatInput).toBeVisible({ timeout: 30_000 });
-    await repeatInput.click();
-    await repeatInput.focus();
-    await repeatInput.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
-    await repeatInput.press('Backspace');
-    await repeatInput.type(String(count), { delay: 25 });
-    await this.page.waitForTimeout(200);
+
+    // if the recurrence editor isn't open yet, click the "Occurs every …"
+    // summary button that appears on the event form after enabling recurrence
+    const intervalCombobox = this.page.locator(CalendarFields.RepeatEveryInput);
+    const alreadyVisible = await intervalCombobox.isVisible({ timeout: 1_500 }).catch(() => false);
+    if (!alreadyVisible) {
+      const summaryBtn = this.page.getByRole('button', { name: /Occurs every/i }).first();
+      await summaryBtn.waitFor({ state: 'visible', timeout: 15_000 });
+      await summaryBtn.click();
+      await this.page.waitForTimeout(400);
+    }
+
+    await intervalCombobox.waitFor({ state: 'visible', timeout: 30_000 });
+
+    // the "Interval" field is a custom combobox — click to open, then pick the option
+    await intervalCombobox.click();
+    await this.page.waitForTimeout(300);
+
+    // try clicking the matching option from the opened listbox
+    const option = this.page.getByRole('option', { name: new RegExp(`^${count}$`) }).first();
+    if (await option.isVisible({ timeout: 3_000 }).catch(() => false)) {
+      await option.click();
+    } else {
+      // fallback: native <select> or type-ahead
+      await intervalCombobox.selectOption(String(count)).catch(async () => {
+        await this.page.keyboard.type(String(count));
+      });
+    }
+
+    await this.page.waitForTimeout(300);
   }
 
+  /**
+   * Selects the unit of time for the recurrence (Days, Weeks, Months, Years).
+   * Outlook uses plural forms in the listbox — the regex handles both.
+   * @param {string} frequency - e.g. "Day", "Week", "Month", "Year"
+   */
   async setRecurrenceFrequency(frequency) {
     await this.page.waitForTimeout(200);
-    const frequencyOption = this.page.getByRole('option', {
-      name: new RegExp(`^${frequency}$`, 'i'),
-    });
-    const frequencyRadio = this.page
-      .getByRole('radio', {
-        name: new RegExp(frequency, 'i'),
-      })
+
+    // ensure the recurrence editor panel is open
+    const unitCombobox = this.page.getByRole('combobox', { name: /unit of time/i });
+    if (!(await unitCombobox.isVisible({ timeout: 1_500 }).catch(() => false))) {
+      const summaryBtn = this.page.getByRole('button', { name: /Occurs every/i }).first();
+      await summaryBtn.waitFor({ state: 'visible', timeout: 15_000 });
+      await summaryBtn.click();
+      await this.page.waitForTimeout(400);
+    }
+
+    // click the "Unit of time" combobox and pick the option
+    // Outlook labels options with plural forms: "days", "weeks", "months", "years"
+    await unitCombobox.waitFor({ state: 'visible', timeout: 10_000 });
+    await unitCombobox.click();
+    await this.page.waitForTimeout(300);
+
+    const option = this.page
+      .getByRole('option', { name: new RegExp(`^${frequency}s?$`, 'i') })
       .first();
-    if (await frequencyRadio.isVisible({ timeout: 10_000 }).catch(() => false)) {
-      await frequencyRadio.click();
-    } else if (await frequencyOption.isVisible({ timeout: 10_000 }).catch(() => false)) {
-      await frequencyOption.click();
+    if (await option.isVisible({ timeout: 3_000 }).catch(() => false)) {
+      await option.click();
     } else {
-      const frequencyBtn = this.page.locator(`text=${frequency}`).first();
-      await expect(frequencyBtn).toBeVisible({ timeout: 10_000 });
-      await frequencyBtn.click();
+      const fallback = this.page
+        .locator(`[role="option"]:has-text("${frequency}")`)
+        .first();
+      await fallback.waitFor({ state: 'visible', timeout: 5_000 });
+      await fallback.click();
     }
     await this.page.waitForTimeout(200);
   }
 
+  /**
+   * Selects a recurrence pattern option (radio or listbox item).
+   * Used for monthly patterns like "On the fourth Friday" or "On the 15th".
+   * @param {string} patternText - partial label of the pattern option
+   */
   async setRecurrencePattern(patternText) {
     await this.page.waitForTimeout(200);
     const patternOption = this.page.getByRole('option', {
@@ -305,7 +379,9 @@ class MakeRecurring {
       })
       .first();
     if (await patternRadio.isVisible({ timeout: 10_000 }).catch(() => false)) {
-      await patternRadio.click();
+      // Fluent UI wraps the radio input in a <label> that intercepts pointer events;
+      // force: true bypasses the interception and clicks the underlying input directly.
+      await patternRadio.click({ force: true });
     } else if (await patternOption.isVisible({ timeout: 10_000 }).catch(() => false)) {
       await patternOption.click();
     } else {
@@ -316,17 +392,178 @@ class MakeRecurring {
     await this.page.waitForTimeout(200);
   }
 
+  /**
+   * Clicks the first radio button whose label starts with the given prefix.
+   * Useful for yearly recurrence where the exact "On the …" label is dynamic.
+   * @param {string} prefix - e.g. 'On the'
+   */
+  async setFirstPatternStartingWith(prefix) {
+    await this.page.waitForTimeout(200);
+    const radio = this.page.getByRole('radio', { name: new RegExp(`^${prefix}`, 'i') }).first();
+    await radio.waitFor({ state: 'visible', timeout: 10_000 });
+    await radio.click({ force: true });
+    await this.page.waitForTimeout(200);
+  }
+
   async setRecurrenceUntil(ddmmyyyy) {
     await this.page.waitForTimeout(200);
-    const untilInput = this.page.locator(CalendarFields.UntilDateInput);
-    await expect(untilInput).toBeVisible({ timeout: 30_000 });
-    await untilInput.click();
-    await untilInput.focus();
-    await untilInput.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
-    await untilInput.press('Backspace');
-    await untilInput.type(ddmmyyyy, { delay: 20 });
-    await untilInput.press('Tab');
-    await this.page.waitForTimeout(200);
+
+    // ensure the recurrence editor panel is open.
+    // for yearly recurrence the interval combobox is hidden (you can't set "every N years"),
+    // so we use the unit-of-time combobox as an alternative panel-open indicator.
+    // only open the panel if NEITHER indicator is visible – clicking the summary button
+    // while the panel is already open would toggle it closed.
+    const intervalCombobox = this.page.locator(CalendarFields.RepeatEveryInput);
+    const unitCombobox = this.page.getByRole('combobox', { name: /unit of time/i });
+    const panelOpen = (await intervalCombobox.isVisible({ timeout: 1_000 }).catch(() => false)) ||
+                      (await unitCombobox.isVisible({ timeout: 1_000 }).catch(() => false));
+    if (!panelOpen) {
+      const summaryBtn = this.page.getByRole('button', { name: /Occurs every/i }).first();
+      await summaryBtn.waitFor({ state: 'visible', timeout: 15_000 });
+      await summaryBtn.click();
+      await this.page.waitForTimeout(400);
+    }
+
+    // clicking the Until / "Choose an end date" button opens a calendar picker.
+    // strategy 1: find via the "Until" label parent
+    // strategy 2: "Choose an end date" button (yearly recurrence UI)
+    let untilDateBtn = null;
+    const untilLabel = this.page.getByText('Until', { exact: true }).first();
+    if (await untilLabel.isVisible({ timeout: 2_000 }).catch(() => false)) {
+      const untilContainer = untilLabel.locator('..');
+      untilDateBtn = untilContainer.getByRole('button').first();
+    } else {
+      untilDateBtn = this.page.getByRole('button', { name: /choose an end date/i }).first();
+    }
+    await untilDateBtn.waitFor({ state: 'visible', timeout: 10_000 });
+    await untilDateBtn.click();
+    await this.page.waitForTimeout(600);
+
+    // parse dd/mm/yyyy
+    const [dd, mm, yyyy] = ddmmyyyy.split('/').map(Number);
+    const MONTHS_FULL  = ['January','February','March','April','May','June',
+                          'July','August','September','October','November','December'];
+    const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun',
+                          'Jul','Aug','Sep','Oct','Nov','Dec'];
+    const fullName  = MONTHS_FULL[mm - 1];
+    const shortName = MONTHS_SHORT[mm - 1];
+
+    // navigate the calendar to the target month/year.
+    // The Until picker can open at a date ahead of the target (e.g. it defaults to 1 year
+    // from start), so we must support both forward and backward navigation.
+    const targetRe = new RegExp(`(${fullName}|${shortName})\\s+${yyyy}`, 'i');
+    const isOnTarget = async () =>
+      this.page.getByRole('button', { name: targetRe }).first()
+        .isVisible({ timeout: 500 }).catch(() => false);
+
+    if (!(await isOnTarget())) {
+      // try forward first (up to 24 months)
+      for (let nav = 0; nav < 24; nav++) {
+        if (await isOnTarget()) break;
+        const nextBtn = this.page.getByRole('button', { name: /go to next month/i }).first();
+        if (!(await nextBtn.isVisible({ timeout: 500 }).catch(() => false))) break;
+        await nextBtn.click();
+        await this.page.waitForTimeout(300);
+      }
+    }
+
+    if (!(await isOnTarget())) {
+      // target is behind the current view — navigate backward (up to 36 months back)
+      for (let nav = 0; nav < 36; nav++) {
+        if (await isOnTarget()) break;
+        const prevBtn = this.page.getByRole('button', { name: /go to previous month/i }).first();
+        if (!(await prevBtn.isVisible({ timeout: 500 }).catch(() => false))) break;
+        await prevBtn.click();
+        await this.page.waitForTimeout(300);
+      }
+    }
+
+    // The Until picker calendar grid does not carry an aria-label with the month/year name.
+    // Instead, anchor on the header button (e.g. "December 2026") and navigate from it
+    // to the sibling calendar grid that holds the day buttons.
+    // Structure (both inline pickers and left-sidebar mini-cal):
+    //   grandparent
+    //     nav-container: button["December 2026"], prev/next arrows
+    //     grid: gridcell > button["1"], button["2"], ...
+    // From the header button: ../../ reaches grandparent, then search for day buttons inside.
+    const headerBtn = this.page
+      .getByRole('button', { name: new RegExp(`(${fullName}|${shortName})\\s+${yyyy}`, 'i') })
+      .first();
+
+    // Primary: 2 levels up → grandparent contains both header and grid
+    let dayBtn = headerBtn
+      .locator('../..')
+      .getByRole('button', { name: new RegExp(`^${dd}(?:[,\\s]|$)`) })
+      .first();
+    if (!(await dayBtn.isVisible({ timeout: 3_000 }).catch(() => false))) {
+      // Try 3 levels up in case the structure is one level deeper
+      dayBtn = headerBtn
+        .locator('../../..')
+        .getByRole('button', { name: new RegExp(`^${dd}(?:[,\\s]|$)`) })
+        .first();
+    }
+    if (!(await dayBtn.isVisible({ timeout: 3_000 }).catch(() => false))) {
+      // Fallback: match by visible text content (no aria-label on button)
+      dayBtn = headerBtn
+        .locator('../../..')
+        .locator('button')
+        .filter({ hasText: new RegExp(`^\\s*${dd}\\s*$`) })
+        .first();
+    }
+    await dayBtn.waitFor({ state: 'visible', timeout: 10_000 });
+    await dayBtn.click();
+    await this.page.waitForTimeout(300);
+  }
+
+  /**
+   * Selects exactly the given days of the week for a weekly recurring event.
+   * Uses a two-pass approach: first selects wanted days, then deselects the rest.
+   * This prevents Outlook from blocking deselection that would leave 0 days selected.
+   * @param {string[]} days - full day names, e.g. ['Monday', 'Friday']
+   */
+  async setWeeklyDays(days) {
+    // 'days' is an array of full day names, e.g. ['Friday', 'Saturday']
+    // ensure recurrence panel is open
+    const intervalCombobox = this.page.locator(CalendarFields.RepeatEveryInput);
+    if (!(await intervalCombobox.isVisible({ timeout: 1_500 }).catch(() => false))) {
+      const summaryBtn = this.page.getByRole('button', { name: /Occurs every/i }).first();
+      await summaryBtn.waitFor({ state: 'visible', timeout: 15_000 });
+      await summaryBtn.click();
+      await this.page.waitForTimeout(400);
+    }
+
+    // Outlook renders days as option elements inside a listbox "Days of the week"
+    const dayListbox = this.page.getByRole('listbox', { name: /days of the week/i });
+    await dayListbox.waitFor({ state: 'visible', timeout: 10_000 });
+
+    // two-pass approach: add wanted days first, then remove unwanted ones.
+    // this prevents Outlook from blocking deselection when it would leave 0 days selected.
+    const ALL_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const wantedSet = new Set(days.map((d) => d.toLowerCase()));
+
+    // pass 1: select wanted days that are not yet selected
+    for (const day of ALL_DAYS) {
+      if (!wantedSet.has(day.toLowerCase())) continue;
+      const dayOption = dayListbox.getByRole('option', { name: new RegExp(`^${day}$`, 'i') });
+      await dayOption.waitFor({ state: 'visible', timeout: 5_000 });
+      const selected = (await dayOption.getAttribute('aria-selected').catch(() => null)) === 'true';
+      if (!selected) {
+        await dayOption.click();
+        await this.page.waitForTimeout(200);
+      }
+    }
+
+    // pass 2: deselect unwanted days (now safe since wanted days are already selected)
+    for (const day of ALL_DAYS) {
+      if (wantedSet.has(day.toLowerCase())) continue;
+      const dayOption = dayListbox.getByRole('option', { name: new RegExp(`^${day}$`, 'i') });
+      await dayOption.waitFor({ state: 'visible', timeout: 5_000 });
+      const selected = (await dayOption.getAttribute('aria-selected').catch(() => null)) === 'true';
+      if (selected) {
+        await dayOption.click();
+        await this.page.waitForTimeout(200);
+      }
+    }
   }
 }
 
@@ -358,6 +595,10 @@ class TimeDropdown {
     return this;
   }
 
+  /**
+   * Sets the start date. Clears the field and types the value, then commits with Enter.
+   * @param {string} ddmmyyyy - date in dd/mm/yyyy format, e.g. "15/06/2026"
+   */
   async setStartDate(ddmmyyyy) {
     await this.ensureOpen();
     const startDate = this.page.getByRole('combobox', { name: /start date/i });
@@ -372,14 +613,10 @@ class TimeDropdown {
   }
 
   /**
-   * Proxy to the compose-level recurrence click helper so tests can simply
-   * call `time.clickRecurrenceOption()` instead of reaching back up to the
-   * owner.  This mirrors the behavior described in the smoke test request.
+   * Sets the start time. Uses fill+Tab (not type+Enter) because the time
+   * combobox accepts typed values via fill more reliably.
+   * @param {string} hhmm - time in HH:MM format, e.g. "09:30"
    */
-  async clickRecurrenceOption() {
-    await this.owner.clickRecurrenceOption();
-  }
-
   async setStartTime(hhmm) {
     await this.ensureOpen();
     const startTime = this.page.getByRole('combobox', { name: /start time/i });
@@ -393,6 +630,10 @@ class TimeDropdown {
     return this;
   }
 
+  /**
+   * Sets the end time.
+   * @param {string} hhmm - time in HH:MM format, e.g. "10:00"
+   */
   async setEndTime(hhmm) {
     await this.ensureOpen();
     const endTime = this.page.getByRole('combobox', { name: /end time/i });
@@ -406,6 +647,7 @@ class TimeDropdown {
     return this;
   }
 
+  /** Returns true if the All-day checkbox is currently checked. */
   async isAllDayEnabled() {
     return await this.page
       .locator(CalendarFields.AllDayCheckbox)
@@ -425,6 +667,10 @@ class TimeDropdown {
     return this;
   }
 
+  /**
+   * Sets the All-day checkbox to the desired state (only clicks if it needs to change).
+   * @param {boolean} enabled - true to enable all-day, false to disable
+   */
   async setAllDay(enabled) {
     const currently = await this.isAllDayEnabled();
     if (enabled && !currently) {
@@ -435,56 +681,70 @@ class TimeDropdown {
     return this;
   }
 
+  /** Closes the time/date dropdown by pressing Escape. */
   async close() {
     await this.page.keyboard.press('Escape').catch(() => {});
   }
 
-  // ----------------------------------------------------------------------
-  // recurrence helpers exposed via a callable helper.  the returned value
-  // acts as both a function (so you can `await time.clickRecurrenceOption()`)
-  // and as a namespace for setter methods, enabling fluent chains like
-  //
-  //   await time.clickRecurrenceOption
-  //             .setRepeatEvery(3)
-  //             .setRecurrenceFrequency('Months')
-  //
-  // without additional `await` or `try` boilerplate.  the implementation
-  // attaches the setters as properties on the async function.
-  // ----------------------------------------------------------------------
-  get clickRecurrenceOption() {
-    const self = this;
+}
 
-    // helper that actually performs the click via the owning compose
-    async function clickHelper() {
-      await self.owner.clickRecurrenceOption();
+
+// ------------------------------------------------------------------------
+// helper class for location settings (used by EventDetails.openLocationSettings)
+// ------------------------------------------------------------------------
+class LocationSettings {
+  constructor(page) {
+    this.page = page;
+    this.opened = false;
+
+    /**
+     * Actions available under `openLocationSettings`.
+     * Only the following property is defined so editors can autocomplete:
+     *   - setInPersonEvent(boolean)
+     *
+     * The function toggles the in‑person checkbox and returns the helper so
+     * calls may be chained.  Coercion to Boolean is applied for simplicity.
+     *
+     * @type {{setInPersonEvent: function(boolean):Promise<LocationSettings>}}
+     */
+    this.setInPersonEvent = async (enabled) => {
+      await this.ensureOpen();
+      const toggle = this.page
+        .getByRole('menuitemcheckbox', {
+          name: /in-person event/i,
+        })
+        .first();
+      await toggle.waitFor({ state: 'visible', timeout: 10_000 });
+      const checked = (await toggle.getAttribute('aria-checked')) === 'true';
+      if (checked !== Boolean(enabled)) {
+        await toggle.click();
+      }
+      return this;
+    };
+  }
+
+  /**
+   * Ensure the location-settings menu is open (clicks the button once).
+   */
+  async ensureOpen() {
+    if (!this.opened) {
+      const btn = this.page.locator(CalendarFields.LocationSettingsButton).first();
+      await btn.waitFor({ state: 'visible', timeout: 30_000 });
+      await btn.click();
+      await this.page.waitForTimeout(200);
+      this.opened = true;
     }
-
-    // add the fluent setter methods
-    clickHelper.setRepeatEvery = async (count) => {
-      await clickHelper();
-      await self.owner.setRepeatEvery(count);
-      return clickHelper;
-    };
-    clickHelper.setRecurrenceFrequency = async (freq) => {
-      await clickHelper();
-      await self.owner.setRecurrenceFrequency(freq);
-      return clickHelper;
-    };
-    clickHelper.setRecurrencePattern = async (pattern) => {
-      await clickHelper();
-      await self.owner.setRecurrencePattern(pattern);
-      return clickHelper;
-    };
-    clickHelper.setRecurrenceUntil = async (date) => {
-      await clickHelper();
-      await self.owner.setRecurrenceUntil(date);
-      return clickHelper;
-    };
-
-    return clickHelper;
   }
 }
 
+
+/**
+ * EventDetails
+ * ------------
+ * Encapsulates interactions with the main form fields: title, attendees,
+ * location, and the time/date dropdown. Also exposes `openResponseOptions`
+ * and `openTimeDropdown` as cached helper objects.
+ */
 class EventDetails {
   constructor(page, compose) {
     // keep a link to the compose instance so helpers like the time dropdown
@@ -541,6 +801,11 @@ class EventDetails {
     return this._timeHelper;
   }
 
+  /**
+   * Closes any open suggestion/autocomplete dropdown and moves focus away.
+   * Called after committing a recipient or location so the dropdown doesn't
+   * block the next interaction.
+   */
   async blurAndCloseSuggestions() {
     await this.page.keyboard.press('Escape').catch(() => {});
     await this.page.waitForTimeout(50);
@@ -548,6 +813,13 @@ class EventDetails {
     await this.page.waitForTimeout(50);
   }
 
+  /**
+   * Focuses a contenteditable field, types text, and commits with Enter.
+   * Retries focus up to 5 times because Outlook sometimes keeps focus in a
+   * nested child element rather than the editor root.
+   * @param {import('@playwright/test').Locator} editor
+   * @param {string} text
+   */
   async typeAndCommitInContentEditable(editor, text, { delay = 25 } = {}) {
     await editor.scrollIntoViewIfNeeded();
     await editor.click({ force: true });
@@ -568,11 +840,16 @@ class EventDetails {
     await this.page.keyboard.press('Enter');
   }
 
+  /** Fills the event title field. */
   async fillTitle(title) {
     await expect(this.titleInput).toBeVisible({ timeout: 45_000 });
     await this.titleInput.fill(title);
   }
 
+  /**
+   * Adds a required attendee and waits for the token to appear in the UI.
+   * @param {string} email - full email address
+   */
   async addRequiredAttendee(email) {
     await expect(this.requiredAttendees).toBeVisible({ timeout: 45_000 });
     await this.typeAndCommitInContentEditable(this.requiredAttendees, email);
@@ -586,46 +863,35 @@ class EventDetails {
     await this.openTimeDropdown.setStartDate(ddmmyyyy);
   }
 
-  async clearAndTypeCombobox(combo, value, { delay = 20 } = {}) {
-    await combo.waitFor({ state: 'visible', timeout: 30_000 });
-    await combo.click();
-    await combo.focus();
-    await combo.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
-    await combo.press('Backspace');
-    await combo.type(value, { delay });
-    await combo.press('Enter');
-  }
-
-  async clearAndFillCombobox(combo, value) {
-    await combo.waitFor({ state: 'visible', timeout: 30_000 });
-    await combo.click();
-    await combo.focus();
-    await combo.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
-    await combo.press('Backspace');
-    await combo.fill(value);
-    await combo.press('Tab');
-  }
-
+  /** Delegates to TimeDropdown.setStartTime. @param {string} hhmm */
   async setStartTime(hhmm) {
     await this.openTimeDropdown.setStartTime(hhmm);
   }
 
+  /** Delegates to TimeDropdown.setEndTime. @param {string} hhmm */
   async setEndTime(hhmm) {
     await this.openTimeDropdown.setEndTime(hhmm);
   }
 
+  /** Closes the time/date dropdown panel. */
   async closeTimeDropdown() {
     await this.openTimeDropdown.close();
   }
 
+  /** Returns true if the All-day checkbox is currently checked. */
   async isAllDayEnabled() {
     return await this.openTimeDropdown.isAllDayEnabled();
   }
 
+  /** Clicks the All-day checkbox, toggling it regardless of current state. */
   async toggleAllDay() {
     await this.openTimeDropdown.toggleAllDay();
   }
 
+  /**
+   * Sets the All-day checkbox to the desired state.
+   * @param {boolean} enabled
+   */
   async setAllDay(enabled) {
     await this.openTimeDropdown.setAllDay(enabled);
   }
@@ -690,6 +956,11 @@ class EventDetails {
     await this.page.waitForTimeout(300);
   }
 
+  /**
+   * Adds an optional attendee. The optional field must already be visible
+   * (call `openResponseOptions.setResponseOption.addOptionalAttendees()` first if needed).
+   * @param {string} email
+   */
   async addOptionalAttendee(email) {
     const field = this.page.locator(CalendarFields.OptionalAttendeesEditable);
     await expect(field).toBeVisible({ timeout: 45_000 });
@@ -711,6 +982,13 @@ class EventDetails {
   }
 }
 
+/**
+ * EventBody
+ * ---------
+ * Handles typing into the event body (rich-text contenteditable area).
+ * Uses force-clicks and a focus guard because the body editor can be nested
+ * inside a wrapper that intercepts normal clicks.
+ */
 class EventBody {
   constructor(page) {
     this.page = page;
@@ -718,6 +996,11 @@ class EventBody {
     this.body = page.locator(CalendarFields.BodyEditable).first();
   }
 
+  /**
+   * Clears the body and types the given text.
+   * Avoids pressing Escape (it would close the compose dialog if focus is outside a text field).
+   * @param {string} text
+   */
   async setBody(text) {
     // previously we used Escape to clear suggestions, but in practice the
     // compose dialog will close when Escape is pressed with focus outside of
@@ -748,32 +1031,37 @@ class EventBody {
   }
 }
 
+
+
+// ============================================================================
+// Main page object
+// ============================================================================
+
 export class NewEventCompose {
   constructor(page) {
     this.page = page;
-
-    // Primary dialog container (used for post-send visibility check)
     this.dialog = page.getByRole('dialog').first();
-
-    // helpers
     this.eventToolbar = new EventToolbar(page);
     this.eventDetails = new EventDetails(page, this);
     this.eventBody = new EventBody(page);
-
-    // recurrence-specific helper
     this.makeRecurring = new MakeRecurring(this);
-
-    // Action buttons
     this.sendButton = page
-      .getByRole('button', {
-        name: new RegExp(`^${CalendarActions.Send}$`, 'i'),
-      })
+      .getByRole('button', { name: new RegExp(`^${CalendarActions.Send}$`, 'i') })
       .first();
   }
 
-  // -----------------------------------------------------------------------
-  // convenience wrappers for legacy calls (kept for backwards compatibility)
-  // -----------------------------------------------------------------------
+  async waitUntilOpen() {
+    await expect(this.eventDetails.titleInput).toBeVisible({ timeout: 45_000 });
+  }
+
+  async fillTitle(title) {
+    await this.eventDetails.fillTitle(title);
+  }
+
+  async addRequiredAttendee(email) {
+    await this.eventDetails.addRequiredAttendee(email);
+  }
+
   async setLocation(text) {
     return this.eventDetails.setLocation(text);
   }
@@ -782,407 +1070,96 @@ export class NewEventCompose {
     return this.eventBody.setBody(text);
   }
 
-  /**
-   * Closes suggestion popups and moves focus away from active inputs.
-   * Used after committing recipients/location where dropdowns may remain open.
-   */
-  async blurAndCloseSuggestions() {
-    await this.page.keyboard.press('Escape').catch(() => {});
-    await this.page.waitForTimeout(50);
-    await this.page.keyboard.press('Tab').catch(() => {});
-    await this.page.waitForTimeout(50);
-  }
-
-  /**
-   * Types into a contenteditable field and commits with Enter.
-   * Includes a focus guard because Outlook can keep focus in a nested element
-   * or fail to activate the editor on the first click.
-   */
-  async typeAndCommitInContentEditable(editor, text, { delay = 25 } = {}) {
-    await editor.scrollIntoViewIfNeeded();
-    await editor.click({ force: true });
-
-    for (let i = 0; i < 5; i++) {
-      await editor.click({ force: true });
-
-      const focused = await editor
-        .evaluate((el) => {
-          const a = document.activeElement;
-          return a === el || (!!a?.closest?.('[contenteditable="true"]') && el.contains(a));
-        })
-        .catch(() => false);
-
-      if (focused) break;
-      await this.page.waitForTimeout(150);
-    }
-
-    await this.page.keyboard.type(text, { delay });
-    await this.page.keyboard.press('Enter');
-  }
-
-  /**
-   * Clears a combobox and types a value, then commits with Enter.
-   * This is primarily used for Start Date where typing is more stable.
-   */
-  async clearAndTypeCombobox(combo, value, { delay = 20 } = {}) {
-    await combo.waitFor({ state: 'visible', timeout: 30_000 });
-    await combo.click();
-    await combo.focus();
-
-    await combo.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
-    await combo.press('Backspace');
-
-    await combo.type(value, { delay });
-    await combo.press('Enter');
-  }
-
-  /**
-   * Clears a combobox and fills a value, then commits via Tab.
-   * This is primarily used for time inputs.
-   */
-  async clearAndFillCombobox(combo, value) {
-    await combo.waitFor({ state: 'visible', timeout: 30_000 });
-    await combo.click();
-    await combo.focus();
-
-    await combo.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
-    await combo.press('Backspace');
-
-    await combo.fill(value);
-    await combo.press('Tab');
-  }
-
-  /**
-   * Waits until the "New event" compose UI is ready for interaction.
-   * Title input is used as a stable readiness signal.
-   */
-  async waitUntilOpen() {
-    // titleInput now lives under details sub-object
-    await expect(this.eventDetails.titleInput).toBeVisible({ timeout: 45_000 });
-  }
-
-  /**
-   * Sets the event title.
-   */
-  async fillTitle(title) {
-    // titleInput moved into eventDetails; delegate so callers still work
-    await this.eventDetails.fillTitle(title);
-  }
-
-  /**
-   * Adds a required attendee and verifies it is rendered in the UI.
-   * Uses a contenteditable commit flow (type + Enter).
-   */
-  async addRequiredAttendee(email) {
-    // delegate to the details sub-object
-    await this.eventDetails.addRequiredAttendee(email);
-  }
-
-  /**
-   * Opens the time range dropdown by clicking the "HH:MM - HH:MM" line.
-   * Wrapper for backward compatibility.
-   */
-  async openTimeDropdown() {
-    await this.openTimeDropdownWithRecurrence();
-  }
-
-  /**
-   * Opens the time/date dropdown and waits for the recurrence options to be visible.
-   * Recurrence options are typically available within the date/time panel.
-   */
-  async openTimeDropdownWithRecurrence() {
-    const timeRangeLine = this.page.locator(`text=${CalendarFields.TimeRangeLineRegex}`).first();
-
-    await timeRangeLine.waitFor({ state: 'visible', timeout: 45_000 });
-    await timeRangeLine.click();
-
-    // Wait for the time/date panel to fully expand
-    await this.page.waitForTimeout(500);
-  }
-
-  /**
-   * Sets the start date (expected format: dd/mm/yyyy).
-   */
   async setStartDate(ddmmyyyy) {
-    const startDate = this.page.getByRole('combobox', { name: /start date/i });
-    await this.clearAndTypeCombobox(startDate, ddmmyyyy, { delay: 20 });
+    await this.eventDetails.openTimeDropdown.setStartDate(ddmmyyyy);
   }
 
-  /**
-   * Sets the start time (expected format: HH:MM).
-   */
   async setStartTime(hhmm) {
-    const startTime = this.page.getByRole('combobox', { name: /start time/i });
-    await this.clearAndFillCombobox(startTime, hhmm);
+    await this.eventDetails.openTimeDropdown.setStartTime(hhmm);
   }
 
-  /**
-   * Sets the end time (expected format: HH:MM).
-   */
   async setEndTime(hhmm) {
-    const endTime = this.page.getByRole('combobox', { name: /end time/i });
-    await this.clearAndFillCombobox(endTime, hhmm);
+    await this.eventDetails.openTimeDropdown.setEndTime(hhmm);
   }
 
-  /**
-   * Clicks on the "Recurrence" option within the date/time panel.
-   * This should be called AFTER openTimeDropdownWithRecurrence().
-   * Recurrence might be a button, link, or checkbox within the time panel.
-   */
-  async clickRecurrenceOption() {
-    // expose the setter helpers in the same scope as the click operation so
-    // callers can treat the result like a mini-API. this satisfies the
-    // requirement that `setRepeatEvery` lives within `clickRecurrenceOption`.
-    const helpers = {
-      setRepeatEvery: async (count) => {
-        await this.setRepeatEvery(count);
-        return helpers;
-      },
-      setRecurrenceFrequency: async (freq) => {
-        await this.setRecurrenceFrequency(freq);
-        return helpers;
-      },
-      setRecurrencePattern: async (pattern) => {
-        await this.setRecurrencePattern(pattern);
-        return helpers;
-      },
-      setRecurrenceUntil: async (date) => {
-        await this.setRecurrenceUntil(date);
-        return helpers;
-      },
-    };
-
-    // The panel may close after interacting with the time inputs, so always
-    // start by re-opening it.  Delegate to the time dropdown helper because
-    // the logic for opening lives there.
-    await this.eventDetails.openTimeDropdown.ensureOpen();
-
-    // Sometimes the panel renders its content a bit slowly. We'll allow a
-    // couple of attempts before giving up, since failures were previously
-    // benign but noisy.
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      // brief pause to let any animations settle
-      await this.page.waitForTimeout(300);
-
-      // Try multiple strategies to find the recurrence option within the time panel
-      let recurrenceBtn = null;
-
-      // Strategy 1: Look for any clickable element with "Recurrence" text (case-insensitive)
-      recurrenceBtn = this.page.locator('button:has-text(/recurrence/i), a:has-text(/recurrence/i), [role="button"]:has-text(/recurrence/i), [role="checkbox"]:has-text(/recurrence/i)').first();
-
-      if (await recurrenceBtn.isVisible({ timeout: 3_000 }).catch(() => false)) {
-        await recurrenceBtn.click();
-        await this.page.waitForTimeout(300);
-        return helpers;
-      }
-
-      // Strategy 2: Look for element with text containing "recurrence" and click it
-      const recurrenceTextBtn = this.page.locator('text=/recurrence/i').first();
-      if (await recurrenceTextBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
-        await recurrenceTextBtn.click({ force: true });
-        await this.page.waitForTimeout(300);
-        return helpers;
-      }
-
-      // Strategy 3: Find within a specific panel/dialog container
-      const panel = this.page.locator('[role="dialog"], [role="region"]').first();
-      if (await panel.isVisible({ timeout: 2_000 }).catch(() => false)) {
-        const panelRecurrence = panel.locator('text=/recurrence/i').first();
-        if (await panelRecurrence.isVisible({ timeout: 2_000 }).catch(() => false)) {
-          await panelRecurrence.click({ force: true });
-          await this.page.waitForTimeout(300);
-          return helpers;
-        }
-      }
-
-      // Strategy 4: Look for checkbox with "recurrence" label
-      const recurrenceCheckbox = this.page.locator('input[type="checkbox"][aria-label*="recurrence" i], input[type="checkbox"] + label:has-text(/recurrence/i)').first();
-      if (await recurrenceCheckbox.isVisible({ timeout: 2_000 }).catch(() => false)) {
-        await recurrenceCheckbox.click();
-        await this.page.waitForTimeout(300);
-        return helpers;
-      }
-
-      // Strategy 5: Try to find any button/link containing "recurring"
-      const recurringBtn = this.page.locator('button:has-text(/recurring/i), a:has-text(/recurring/i), [role="button"]:has-text(/recurring/i)').first();
-      if (await recurringBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
-        await recurringBtn.click();
-        await this.page.waitForTimeout(300);
-        return helpers;
-      }
-
-      // if we got here and it's the first attempt, loop again before failing
-    }
-
-    // Nothing worked after two tries. as a last-ditch fallback try the
-    // toolbar "Series" button which has the same effect to open recurrence
-    // settings for an event.  This should significantly reduce noise when the
-    // panel item is simply not rendered.
-    try {
-      await this.clickSeriesButton();
-      return helpers;
-    } catch (e) {
-      // ignore and proceed to error below
-    }
-
-    const availableElements = await this.page
-      .locator('button, a, [role="button"], label')
-      .evaluateAll((els) =>
-        els.slice(0, 15).map((el) => ({
-          tag: el.tagName,
-          text: el.textContent?.trim().substring(0, 50),
-          role: el.getAttribute('role'),
-        }))
-      )
-      .catch(() => []);
-
-    throw new Error(`Could not find "Recurrence" option in the date/time panel. ` + `Available elements (first 15): ${JSON.stringify(availableElements, null, 2)}`);
-  }
-
-  /**
-   * Clicks the "Series"/"Recurring" toolbar button which toggles the event
-   * into a series/recurring event. This is exposed separately from
-   * `clickRecurrenceOption` which operates within the date/time panel.
-   */
-  async clickSeriesButton() {
-    const btn = this.page.locator(CalendarFields.RecurringButton).first();
-    await btn.waitFor({ state: 'visible', timeout: 30_000 });
-    await btn.click();
-  }
-
-  /**
-   * Sets the availability/status (Busy/Free/Working elsewhere/etc.) by
-   * opening the status dropdown and selecting the desired option.
-   * `status` should be the human‑readable label exactly as shown in the menu.
-   */
+  /** Delegates to EventToolbar — validation is enforced there. */
   async setStatus(status) {
-    // open the availability dropdown
-    const btn = this.page
-      .getByRole('button', {
-        name: /busy|free|working elsewhere|tentative|out of office/i,
-      })
-      .first();
-    await btn.click();
-
-    // attempt to pick by exact text; use very short timeout and swallow if not
-    // visible so tests can continue even if some labels change.
-    try {
-      const option = this.page.getByText(status, { exact: true }).first();
-      await option.waitFor({ state: 'visible', timeout: 2_000 });
-      await option.click();
-    } catch (e) {
-      // ignore if the item cannot be selected
-    }
+    return this.eventToolbar.setStatus(status);
   }
 
-  /**
-   * Chooses a reminder option from the reminder dropdown in the toolbar.
-   */
+  /** Delegates to EventToolbar — validation is enforced there. */
   async setReminder(optionText) {
-    const btn = this.page.locator(CalendarFields.ReminderButton).first();
-    await btn.click();
-
-    try {
-      const option = this.page.getByText(optionText, { exact: true }).first();
-      await option.waitFor({ state: 'visible', timeout: 2_000 });
-      await option.click();
-    } catch (e) {
-      // ignore missing reminder entries
-    }
+    return this.eventToolbar.setReminder(optionText);
   }
 
-  /**
-   * Sets privacy state by clicking the button and selecting the correct menu option.
-   * privacyOption should be "Private" or "Not private" (from the Privacy constant).
-   */
   async setPrivacy(privacyOption) {
-    const btn = this.page.locator(CalendarFields.PrivacyButton).first();
-    await btn.click();
-
-    try {
-      const option = this.page.getByText(privacyOption, { exact: true }).first();
-      await option.waitFor({ state: 'visible', timeout: 2_000 });
-      await option.click();
-    } catch (e) {
-      // ignore if the item cannot be selected
-    }
+    return this.eventToolbar.setPrivacy(privacyOption);
   }
 
-  /**
-   * Opens the response options menu (the three‑dot icon next to attendees).
+  async clickSeriesButton() {
+    return this.eventToolbar.clickSeriesButton();
+  }
 
-  /**
-   * Sets the "Repeat every" frequency count.
-   * E.g., if count = 3 and frequency = "Months", repeats every 3 months.
-   */
+  async clickRecurrenceOption() {
+    return this.makeRecurring.clickRecurrenceOption();
+  }
+
   async setRepeatEvery(count) {
     return this.makeRecurring.setRepeatEvery(count);
   }
 
-  /**
-   * Selects the recurrence frequency/unit (Days, Weeks, Months, Years).
-   * This typically interacts with a dropdown or radio group.
-   */
   async setRecurrenceFrequency(frequency) {
     return this.makeRecurring.setRecurrenceFrequency(frequency);
   }
 
-  /**
-   * Selects a specific recurrence pattern for monthly/weekly recurring events.
-   * E.g., "On the fourth Friday", "On the 15th", etc.
-   */
   async setRecurrencePattern(patternText) {
     return this.makeRecurring.setRecurrencePattern(patternText);
   }
 
-  /**
-   * Sets the "Until" date for the recurring event (format: dd/mm/yyyy).
-   * E.g., "11/01/2027" for Jan 11, 2027.
-   */
+  async setFirstPatternStartingWith(prefix) {
+    return this.makeRecurring.setFirstPatternStartingWith(prefix);
+  }
+
   async setRecurrenceUntil(ddmmyyyy) {
     return this.makeRecurring.setRecurrenceUntil(ddmmyyyy);
   }
 
-  /**
-   * Sets the event location and dismisses suggestions.
-   * This method aggressively closes the location dropdown to prevent
-   * it from interfering with subsequent interactions.
-   */
-  // the class already exposes location/body helpers through eventDetails
-  // and eventBody. the convenience wrappers above take care of them, so we
-  // can completely remove the duplicate implementations that previously lived
-  // here.  keeping them around was causing "undefined" errors when someone
-  // accidentally called the wrong method (see failing recurring tests).
-
-  // (methods removed)
-
-  /**
-   * Sends the event and verifies that the compose dialog is dismissed.
-   */
-  async send() {
-    await this.dismissDiscardChanges();
-    await this.sendButton.waitFor({ state: 'visible', timeout: 45_000 });
-    await this.sendButton.click();
-
-    await expect(this.dialog).toBeHidden({ timeout: 45_000 });
+  async setWeeklyDays(days) {
+    return this.makeRecurring.setWeeklyDays(days);
   }
 
   /**
-   * Clicks the "Save" button (used when not sending invites) and verifies
-   * the compose dialog is dismissed. This complements `send()` above.
+   * Ensures the event is in the specified type (Event or Series).
+   * @param {EventType[keyof EventType]} type
    */
+  async ensureEventType(type) {
+    if (type === EventType.Series) {
+      await this.clickSeriesButton();
+    }
+  }
+
+  async blurAndCloseSuggestions() {
+    await this.eventDetails.blurAndCloseSuggestions();
+  }
+
+  async dismissDiscardChanges() {
+    const dialog = this.page.locator('text=/discard changes/i').first();
+    if (await dialog.isVisible({ timeout: 2_000 }).catch(() => false)) {
+      const cancelBtn = this.page.getByRole('button', { name: /no|cancel|keep changes/i }).first();
+      if (await cancelBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
+        await cancelBtn.click();
+        await this.page.waitForTimeout(300);
+      } else {
+        await this.page.keyboard.press('Escape').catch(() => {});
+        await this.page.waitForTimeout(300);
+      }
+    }
+  }
+
   async save() {
     await this.dismissDiscardChanges();
+    if (!(await this.dialog.isVisible().catch(() => false))) return;
 
-    // if the dialog is already gone, assume the event was saved by some
-    // previous action (body editing sometimes causes auto-close) and exit
-    // gracefully rather than throwing an error.
-    if (!(await this.dialog.isVisible().catch(() => false))) {
-      console.log('save(): dialog not visible, skipping save');
-      return;
-    }
-
-    // simple case: Save button is visible
     const saveBtn = this.page.getByRole('button', { name: /^save$/i }).first();
     if (await saveBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
       await saveBtn.click();
@@ -1190,202 +1167,34 @@ export class NewEventCompose {
       return;
     }
 
-    // fallback: button has switched to Send with a dropdown; choose "Save as draft"
     const sendBtn = this.page.getByRole('button', { name: /^send$/i }).first();
     if (await sendBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      // log HTML for debugging
-      console.log('sendBtn html:', await sendBtn.innerHTML());
-      // also log outerHTML of parent and siblings
-      console.log('sendBtn parentHTML', await sendBtn.evaluate((el) => el.parentElement?.outerHTML));
-      console.log('sendBtn nextSibling', await sendBtn.evaluate((el) => el.nextElementSibling?.outerHTML));
-      console.log('sendBtn previousSibling', await sendBtn.evaluate((el) => el.previousElementSibling?.outerHTML));
-
-      // first look for the split-button menu sibling (the actual arrow
-      // button that lives next to the primary send control). this is much
-      // more reliable than guessing based on icon selectors which were being
-      // clicked previously and produced false positives.
-      let arrowClicked = false;
       const menuSibling = sendBtn.locator('xpath=following-sibling::button').first();
       if (await menuSibling.isVisible().catch(() => false)) {
         await menuSibling.click();
-        arrowClicked = true;
       } else {
-        // fall back to a few generic selectors in case the structure is
-        // different; these are low-priority and should not trigger arrowClicked
-        // unless we actually click something meaningful.
-        const arrowSelectors = ['[data-automationid=splitbuttonmenu]', '.ms-Button-menuIcon', '[aria-haspopup] svg'];
-        for (const sel of arrowSelectors) {
-          const arrow = sendBtn.locator(sel).first();
-          if (await arrow.isVisible().catch(() => false)) {
-            await arrow.click();
-            arrowClicked = true;
-            break;
-          }
-        }
-      }
-
-      if (!arrowClicked) {
-        // there was no dropdown arrow available – clicking the primary
-        // action will immediately send the event (no draft option exists).
-        // treat it as a normal send and return.
         await sendBtn.click();
         await expect(this.dialog).toBeHidden({ timeout: 45_000 });
         return;
       }
-
-      // if we did click an arrow, a menu should appear; capture any items
-      // for debugging and then select "Save as draft".
-      const items = this.page.locator('role=menuitem');
-      const count = await items.count();
-      console.log('menu items after send click:', count);
-      for (let i = 0; i < count; i++) {
-        const it = items.nth(i);
-        console.log(i, await it.textContent());
-      }
-
-      const draftOption = this.page
-        .getByRole('menuitem', {
-          name: /save as draft/i,
-        })
-        .first();
+      const draftOption = this.page.getByRole('menuitem', { name: /save as draft/i }).first();
       await draftOption.waitFor({ state: 'visible', timeout: 15_000 });
       await draftOption.click();
       await expect(this.dialog).toBeHidden({ timeout: 45_000 });
       return;
     }
 
-    // if neither button appears, throw for debugging. include dialog
-    // visibility to aid diagnosis.
-    const dialogVisible = await this.dialog.isVisible().catch(() => false);
-    throw new Error(`Unable to locate Save or Send button when saving event ` + `(dialog visible: ${dialogVisible})`);
+    throw new Error(`Unable to locate Save or Send button`);
   }
 
-  /**
-   * Convenience method that selects "Save as draft" explicitly via the send
-   * dropdown. Useful when we know Send is present and want that option.
-   */
-  async saveAsDraft() {
-    const sendBtn = this.page.getByRole('button', { name: /^send$/i }).first();
-    await sendBtn.waitFor({ state: 'visible', timeout: 45_000 });
-    await sendBtn.click();
-    const draftOption = this.page
-      .getByRole('menuitem', {
-        name: /save as draft/i,
-      })
+  async send() {
+    await this.dismissDiscardChanges();
+    this.sendButton = this.page
+      .getByRole('button', { name: new RegExp(`^${CalendarActions.Send}$`, 'i') })
       .first();
-    await draftOption.waitFor({ state: 'visible', timeout: 15_000 });
-    await draftOption.click();
+    await this.sendButton.waitFor({ state: 'visible', timeout: 45_000 });
+    await this.sendButton.click();
     await expect(this.dialog).toBeHidden({ timeout: 45_000 });
   }
-
-  /**
-   * Ensures the event is in the specified type (Event or Series).
-   * If current state differs from desired, toggles via Series button.
-   */
-  async ensureEventType(type) {
-    // For now, assume we start in Event mode and only toggle if Series is desired
-    if (type === EventType.Series) {
-      await this.clickSeriesButton();
-    }
-    // If type is Event, do nothing (default state)
-  }
-
-  /**
-   * Sets the status/availability to the specified value using the Status constant.
-   */
-  async ensureStatus(status) {
-    await this.setStatus(status);
-  }
-
-  // ------------------------------------------------------------------------
-  // location settings helper class follows after end of NewEventCompose
-  // ------------------------------------------------------------------------
-
-  /**
-   * Sets the reminder to the specified value using the Reminder constant.
-   */
-  async ensureReminder(reminder) {
-    await this.setReminder(reminder);
-  }
-
-  /**
-   * Sets privacy state: pass Privacy.Private or Privacy.NotPrivate from constants.
-   */
-  async ensurePrivacy(privacyOption) {
-    await this.setPrivacy(privacyOption);
-  }
-
-  /**
-   * If a "Discard changes" confirmation popup appears, close it.
-   * This can happen when focus leaves a compose field and Outlook
-   * warns about unsaved input. We look for common dialog buttons
-   * and click the negative path ("No", "Cancel", etc.).
-   */
-  async dismissDiscardChanges() {
-    const dialogSelector = 'text=/discard changes/i';
-    const dialog = this.page.locator(dialogSelector).first();
-    if (await dialog.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      // look for a button with "No" or "Cancel"
-      const cancelBtn = this.page.getByRole('button', { name: /no|cancel|keep changes/i }).first();
-      if (await cancelBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
-        await cancelBtn.click();
-        await this.page.waitForTimeout(300);
-      } else {
-        // fallback: press Escape to close dialog
-        await this.page.keyboard.press('Escape').catch(() => {});
-        await this.page.waitForTimeout(300);
-      }
-    }
-  }
 }
 
-// ------------------------------------------------------------------------
-// helper class for location settings (used by NewEventCompose.openLocationSettings)
-// ------------------------------------------------------------------------
-// ------------------------------------------------------------------------
-// helper class for location settings (used by NewEventCompose.openLocationSettings)
-// ------------------------------------------------------------------------
-class LocationSettings {
-  constructor(page) {
-    this.page = page;
-    this.opened = false;
-
-    /**
-     * Actions available under `openLocationSettings`.
-     * Only the following property is defined so editors can autocomplete:
-     *   - setInPersonEvent(boolean)
-     *
-     * The function toggles the in‑person checkbox and returns the helper so
-     * calls may be chained.  Coercion to Boolean is applied for simplicity.
-     *
-     * @type {{setInPersonEvent: function(boolean):Promise<LocationSettings>}}
-     */
-    this.setInPersonEvent = async (enabled) => {
-      await this.ensureOpen();
-      const toggle = this.page
-        .getByRole('menuitemcheckbox', {
-          name: /in-person event/i,
-        })
-        .first();
-      await toggle.waitFor({ state: 'visible', timeout: 10_000 });
-      const checked = (await toggle.getAttribute('aria-checked')) === 'true';
-      if (checked !== Boolean(enabled)) {
-        await toggle.click();
-      }
-      return this;
-    };
-  }
-
-  /**
-   * Ensure the location-settings menu is open (clicks the button once).
-   */
-  async ensureOpen() {
-    if (!this.opened) {
-      const btn = this.page.locator(CalendarFields.LocationSettingsButton).first();
-      await btn.waitFor({ state: 'visible', timeout: 30_000 });
-      await btn.click();
-      await this.page.waitForTimeout(200);
-      this.opened = true;
-    }
-  }
-}

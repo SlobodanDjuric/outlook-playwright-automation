@@ -26,7 +26,7 @@ test('Outlook Calendar - Send new event (POM)', async ({ page }) => {
   const START_TIME = '18:15';
   const END_TIME = '19:00';
   const LOCATION = 'Conference 3';
-  const BODY = 'Ovo je body poruka za New Event (POM). Playwright test.';
+  const BODY = 'This is the event body for New Event (POM). Playwright test.';
 
   // grant location permission ahead of time so the Chrome geolocation
   // prompt doesn't interfere when typing a location

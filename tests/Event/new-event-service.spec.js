@@ -1,5 +1,5 @@
 // tests/send-new-event-service.spec.js
-// ovaj test koristi
+// Uses EventService (lower-level API) instead of the POM compose dialog
 import { test, expect } from '@playwright/test';
 import { EventService } from '../../pages/outlook/eventService.js';
 
@@ -34,7 +34,7 @@ test('Outlook Calendar - Send new event (Service)', async ({ page }) => {
     startTime: '18:15',
     endTime: '19:00',
     location: 'Conference 3',
-    body: 'Body poruka (Service).',
+    body: 'Test body message (Service).',
   });
 
   await page.waitForTimeout(3000);

@@ -26,7 +26,7 @@ test('Outlook - Send full email (TO + CC + BCC + Subject + Body) - POM', async (
   const BCC = 'bcc@example.com';
 
   const SUBJECT = `Playwright full send ${Date.now()}`;
-  const BODY = 'Ovo je test poruka sa TO + CC + BCC.';
+  const BODY = 'This is a test message with TO + CC + BCC.';
 
   await compose.openNewMail();
 
