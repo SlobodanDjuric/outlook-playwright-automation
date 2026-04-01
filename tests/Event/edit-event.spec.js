@@ -1,6 +1,7 @@
 // tests/Event/edit-event.spec.js
 import { test, expect } from '../fixtures.js';
-import { NewEventCompose } from '../../pages/outlook/NewEventCompose.js';
+import { NewEventCompose } from '../../pages/page-objects/NewEventCompose.js';
+import { futureDateDDMMYYYY } from '../utils/dateHelpers.js';
 
 // All tests in this file navigate to Outlook Calendar and need extra time.
 test.use({ timeout: 180_000 });
@@ -26,23 +27,13 @@ test.use({ timeout: 180_000 });
  *   getByRole('button', { name: /title/ }) is the correct locator.
  */
 
-function pad2(n) {
-  return String(n).padStart(2, '0');
-}
-
-function tomorrowDDMMYYYY() {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  return `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()}`;
-}
-
 test('Edit existing event — title update persists on calendar', async ({ calendarPage }) => {
   const { page, nav } = calendarPage;
   test.setTimeout(180_000);
 
   const ORIGINAL_TITLE = `Edit Test ${Date.now()}`;
   const UPDATED_TITLE = `${ORIGINAL_TITLE} [edited]`;
-  const START_DATE = tomorrowDDMMYYYY();
+  const START_DATE = futureDateDDMMYYYY(1);
   const START_TIME = '10:00';
   const END_TIME = '11:00';
 

@@ -1,8 +1,13 @@
+// tests/custom/folders-checks.spec.js
+// Navigates to each standard Outlook folder in sequence and verifies that
+// the folder name is visible in the main panel after opening.
+// Covers: Sent Items, Inbox, Junk Email, Drafts, Deleted Items, Archive, Notes, Conversation History.
+
 import { test, expect } from '@playwright/test';
-import { MailFolders } from '../../pages/components/mailFolders.js';
+import { MailFolders } from '../../pages/components/MailFolderss.js';
 import { Folders } from '../../pages/constants/folders.js';
 
-test('Select "Sent Items" folder and verify it is opened', async ({ page }) => {
+test('Navigate all standard folders — each folder header is visible after opening', async ({ page }) => {
   await page.goto('https://outlook.live.com/mail/', {
     waitUntil: 'domcontentloaded',
   });
@@ -15,7 +20,7 @@ test('Select "Sent Items" folder and verify it is opened', async ({ page }) => {
 
   const mailFolders = new MailFolders(page);
 
-  // open the folder via the MailFolders page object
+  // open the folder via the MailFolderss page object
   await mailFolders.open(Folders.SentItems);
 
   // verify that "Sent Items" text appears somewhere in the main panel

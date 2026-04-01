@@ -1,4 +1,4 @@
-// pages/outlook/eventService.js
+// pages/page-objects/EventService.js
 import { CalendarNavigation } from '../components/CalendarNavigation.js';
 import { NewEventCompose } from './NewEventCompose.js';
 

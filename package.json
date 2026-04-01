@@ -2,7 +2,14 @@
   "name": "outlook_automation",
   "version": "1.0.0",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:mail": "playwright test tests/Mail/",
+    "test:event": "playwright test tests/Event/",
+    "test:auth": "playwright test tests/custom/auth.spec.js",
+    "report": "playwright show-report"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",

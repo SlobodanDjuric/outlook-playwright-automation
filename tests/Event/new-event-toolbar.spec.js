@@ -1,21 +1,12 @@
+// tests/Event/new-event-toolbar.spec.js
+// Exhaustive toolbar test: cycles through every Status, Reminder, and Privacy
+// option, and toggles the Series button — all on a single event with only a title.
+// Use this as a broad smoke test for toolbar interactions.
+
 import { test, expect } from '@playwright/test';
 import { CalendarNavigation } from '../../pages/components/CalendarNavigation.js';
-import { NewEventCompose } from '../../pages/outlook/NewEventCompose.js';
+import { NewEventCompose } from '../../pages/page-objects/NewEventCompose.js';
 import { Status, Reminder, Privacy } from '../../pages/constants/calendarOptions.js';
-
-function pad2(n) {
-  return String(n).padStart(2, '0');
-}
-
-function formatDDMMYYYY(date) {
-  return `${pad2(date.getDate())}/${pad2(date.getMonth() + 1)}/${date.getFullYear()}`;
-}
-
-function futureDateDDMMYYYY(daysAhead = 30) {
-  const d = new Date();
-  d.setDate(d.getDate() + daysAhead);
-  return formatDDMMYYYY(d);
-}
 
 // This test covers a variety of toolbar interactions on the "New event" dialog
 // including toggling into a series, cycling through availability/status

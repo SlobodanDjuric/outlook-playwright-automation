@@ -1,11 +1,18 @@
 /**
  * CalendarOptions
  * ---------------
- * Centralized list of all available options for event toolbar controls.
+ * Centralized list of all available options for event toolbar controls,
+ * plus UI action labels used in Calendar navigation.
  *
  * These are used by tests to specify exact event configurations
  * without hardcoding option labels.
  */
+
+// Calendar UI action button labels (formerly calendarActions.js)
+export const CalendarActions = Object.freeze({
+  NewEvent: 'New event',
+  Send: 'Send',
+});
 
 // Event type toggle: "Event" or "Series"
 export const EventType = Object.freeze({
@@ -40,4 +47,39 @@ export const Reminder = Object.freeze({
 export const Privacy = Object.freeze({
   Private: 'Private',
   NotPrivate: 'Not private',
+});
+
+/**
+ * Recurrence frequency options used in the recurring event dialog.
+ * Passed to RecurrenceOptions.setRecurrenceFrequency().
+ */
+export const RecurrenceFrequency = Object.freeze({
+  Daily: 'Day',
+  Weekly: 'Week',
+  Monthly: 'Month',
+  Yearly: 'Year',
+});
+
+/**
+ * Days of the week used in recurring event day-of-week selection.
+ * Passed to RecurrenceOptions.setDaysOfWeek().
+ */
+export const WeekDays = Object.freeze({
+  Monday: 'Monday',
+  Tuesday: 'Tuesday',
+  Wednesday: 'Wednesday',
+  Thursday: 'Thursday',
+  Friday: 'Friday',
+  Saturday: 'Saturday',
+  Sunday: 'Sunday',
+});
+
+/**
+ * Calendar view names used with CalendarNavigation.switchToView().
+ */
+export const CalendarView = Object.freeze({
+  Day: 'Day',
+  WorkWeek: 'Work week',
+  Week: 'Week',
+  Month: 'Month',
 });

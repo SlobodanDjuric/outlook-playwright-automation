@@ -1,19 +1,10 @@
-// tests/send-new-event-service.spec.js
-// Uses EventService (lower-level API) instead of the POM compose dialog
+// tests/Event/new-event-service.spec.js
+// Creates and sends a calendar event using the EventService high-level API.
+// EventService wraps CalendarNavigation + NewEventCompose into a single call,
+// making this the simplest way to test the full event creation flow.
 import { test, expect } from '@playwright/test';
-import { EventService } from '../../pages/outlook/eventService.js';
-
-function pad2(n) {
-  return String(n).padStart(2, '0');
-}
-function formatDDMMYYYY(date) {
-  return `${pad2(date.getDate())}/${pad2(date.getMonth() + 1)}/${date.getFullYear()}`;
-}
-function futureDateDDMMYYYY(daysAhead = 30) {
-  const d = new Date();
-  d.setDate(d.getDate() + daysAhead);
-  return formatDDMMYYYY(d);
-}
+import { EventService } from '../../pages/page-objects/EventService.js';
+import { futureDateDDMMYYYY } from '../utils/dateHelpers.js';
 
 test('Outlook Calendar - Send new event (Service)', async ({ page }) => {
   test.setTimeout(120_000);

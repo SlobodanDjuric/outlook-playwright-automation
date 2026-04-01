@@ -1,24 +1,10 @@
-// tests/new-event-pom-recurring.spec.js
+// tests/Event/new-event-pom-recurring.spec.js
 import { test, expect } from '@playwright/test';
 import { CalendarNavigation } from '../../pages/components/CalendarNavigation.js';
-import { NewEventCompose } from '../../pages/outlook/NewEventCompose.js';
+import { NewEventCompose } from '../../pages/page-objects/NewEventCompose.js';
+import { futureDateDDMMYYYY } from '../utils/dateHelpers.js';
 
-/**
- * Helper to format date as dd/mm/yyyy
- */
-function pad2(n) {
-  return String(n).padStart(2, '0');
-}
 
-function formatDDMMYYYY(date) {
-  return `${pad2(date.getDate())}/${pad2(date.getMonth() + 1)}/${date.getFullYear()}`;
-}
-
-function futureDateDDMMYYYY(daysAhead = 30) {
-  const d = new Date();
-  d.setDate(d.getDate() + daysAhead);
-  return formatDDMMYYYY(d);
-}
 
 test('Outlook Calendar - Create recurring event (every 3 months on fourth Friday) - POM', async ({ page }) => {
   test.setTimeout(120_000);
@@ -58,10 +44,11 @@ test('Outlook Calendar - Create recurring event (every 3 months on fourth Friday
   await time.setStartTime(START_TIME);
   await time.setEndTime(END_TIME);
 
-  await time.clickRecurrenceOption.setRepeatEvery(REPEAT_EVERY);
-  await time.clickRecurrenceOption.setRecurrenceFrequency(FREQUENCY);
-  await time.clickRecurrenceOption.setRecurrencePattern(PATTERN);
-  await time.clickRecurrenceOption.setRecurrenceUntil(UNTIL_DATE);
+  const recurrence = await event.clickRecurrenceOption();
+  await recurrence.setRepeatEvery(REPEAT_EVERY);
+  await recurrence.setRecurrenceFrequency(FREQUENCY);
+  await recurrence.setRecurrencePattern(PATTERN);
+  await recurrence.setRecurrenceUntil(UNTIL_DATE);
 
   await time.close();
 
@@ -105,9 +92,10 @@ test('Outlook Calendar - Create weekly recurring event (every 2 weeks) - POM', a
   await time.setStartTime(START_TIME);
   await time.setEndTime(END_TIME);
 
-  await time.clickRecurrenceOption.setRepeatEvery(REPEAT_EVERY);
-  await time.clickRecurrenceOption.setRecurrenceFrequency(FREQUENCY);
-  await time.clickRecurrenceOption.setRecurrenceUntil(UNTIL_DATE);
+  const recurrenceW = await event.clickRecurrenceOption();
+  await recurrenceW.setRepeatEvery(REPEAT_EVERY);
+  await recurrenceW.setRecurrenceFrequency(FREQUENCY);
+  await recurrenceW.setRecurrenceUntil(UNTIL_DATE);
 
   await time.close();
 
@@ -150,9 +138,10 @@ test('Outlook Calendar - Create daily recurring event (every 5 days) - POM', asy
   await time.setStartTime(START_TIME);
   await time.setEndTime(END_TIME);
 
-  await time.clickRecurrenceOption.setRepeatEvery(REPEAT_EVERY);
-  await time.clickRecurrenceOption.setRecurrenceFrequency(FREQUENCY);
-  await time.clickRecurrenceOption.setRecurrenceUntil(UNTIL_DATE);
+  const recurrenceD = await event.clickRecurrenceOption();
+  await recurrenceD.setRepeatEvery(REPEAT_EVERY);
+  await recurrenceD.setRecurrenceFrequency(FREQUENCY);
+  await recurrenceD.setRecurrenceUntil(UNTIL_DATE);
 
   await time.close();
 

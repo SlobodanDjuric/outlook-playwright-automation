@@ -1,3 +1,9 @@
+// tests/custom/auth.spec.js
+// One-time manual login helper: pauses execution so you can log in by hand,
+// then saves the resulting browser storage state to storageState.json.
+// Run this once before running other tests to authenticate.
+// This test is NOT part of the regular test suite — run it manually only.
+
 import { test } from '@playwright/test';
 
 test('Login and save storage state', async ({ page }) => {

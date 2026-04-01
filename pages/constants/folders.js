@@ -17,6 +17,7 @@ export const Folders = Object.freeze({
   DeletedItems: 'Deleted Items',
   JunkEmail: 'Junk Email',
   Archive: 'Archive',
+  Outbox: 'Outbox',
   ConversationHistory: 'Conversation History',
   Notes: 'Notes',
 });

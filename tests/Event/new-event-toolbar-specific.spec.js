@@ -1,21 +1,12 @@
+// tests/Event/new-event-toolbar-specific.spec.js
+// Targeted toolbar test: configures a single fixed combination of EventType,
+// Status, Reminder, and Privacy from constants and saves the event.
+// Useful for verifying a specific production-like toolbar configuration.
+
 import { test, expect } from '@playwright/test';
 import { CalendarNavigation } from '../../pages/components/CalendarNavigation.js';
-import { NewEventCompose } from '../../pages/outlook/NewEventCompose.js';
+import { NewEventCompose } from '../../pages/page-objects/NewEventCompose.js';
 import { EventType, Status, Reminder, Privacy } from '../../pages/constants/calendarOptions.js';
-
-function pad2(n) {
-  return String(n).padStart(2, '0');
-}
-
-function formatDDMMYYYY(date) {
-  return `${pad2(date.getDate())}/${pad2(date.getMonth() + 1)}/${date.getFullYear()}`;
-}
-
-function futureDateDDMMYYYY(daysAhead = 30) {
-  const d = new Date();
-  d.setDate(d.getDate() + daysAhead);
-  return formatDDMMYYYY(d);
-}
 
 test('Outlook Calendar - toolbar with specific event config', async ({ page }) => {
   test.setTimeout(120_000);

@@ -1,24 +1,15 @@
-// tests/send-full-mail-pom.spec.js
+// tests/Mail/copilot-send-full-mail-pom.spec.js
+// Variant of send-new-email.spec.js that uses explicit test.step blocks
+// for better trace readability in the Playwright HTML report.
+
 import { test, expect } from '@playwright/test';
-import { NewEmailCompose } from '../../pages/outlook/NewEmailCompose.js';
-import { MailFolders } from '../../pages/components/mailFolders.js';
+import { NewEmailCompose } from '../../pages/page-objects/NewEmailCompose.js';
 
-// this spec is a slightly enhanced variant of the older
-// `send-new-email.spec.js`.  it demonstrates a few improvements:
-//  * explicit test.step blocks for readability in the trace
-//  * no hard `waitForTimeout` after send; we wait for the compose
-//    panel to disappear instead
-//  * file/comment names are consistent
-//  * optional helper `openSent` on the MailFolders object could
-//    be reused in other specs (left as an exercise)
+test.use({ timeout: 180_000 });
 
-test('Outlook - Send full email (TO + CC + BCC + Subject + Body) - POM', async ({ page }) => {
-  test.setTimeout(180_000);
-
+test('Outlook - Send full email (TO + CC + BCC + Subject + Body) - POM with steps', async ({ page }) => {
   const compose = new NewEmailCompose(page);
-  const mailFolders = new MailFolders(page);
 
-  // dynamic data used by the test
   const TO = 'test@example.com';
   const CC = 'cc@example.com';
   const BCC = 'bcc@example.com';
@@ -43,26 +34,5 @@ test('Outlook - Send full email (TO + CC + BCC + Subject + Body) - POM', async (
     await compose.body.set(BODY);
 
     await compose.send.click();
-
-    //   // wait until the editor panel has closed - indicates send completed
-    //   await expect(compose.body.root()).toBeHidden({ timeout: 30_000 });
-    // });
-
-    // await test.step("Verify message in Sent Items", async () => {
-    //   await mailFolders.open("Sent Items");
-
-    //   const messageList = page.getByRole("listbox", { name: /message list/i });
-    //   await expect(messageList).toBeVisible({ timeout: 30_000 });
-
-    //   const firstOption = messageList.locator('[role="option"]').first();
-    //   await expect(firstOption).toBeVisible({ timeout: 30_000 });
-    //   await firstOption.click({ force: true, position: { x: 60, y: 40 } });
-    //   await expect(firstOption).toHaveAttribute("aria-selected", "true", {
-    //     timeout: 30_000,
-    //   });
-
-    //   await expect(
-    //     page.getByRole("main").getByText(SUBJECT, { exact: true }).first()
-    //   ).toBeVisible({ timeout: 30_000 });
   });
 });

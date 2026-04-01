@@ -1,24 +1,10 @@
-// tests/new-event-pom-all-day.spec.js
+// tests/Event/new-event-pom-all-day.spec.js
 import { test, expect } from '@playwright/test';
 import { CalendarNavigation } from '../../pages/components/CalendarNavigation.js';
-import { NewEventCompose } from '../../pages/outlook/NewEventCompose.js';
+import { NewEventCompose } from '../../pages/page-objects/NewEventCompose.js';
+import { futureDateDDMMYYYY } from '../utils/dateHelpers.js';
 
-/**
- * Helper to format date as dd/mm/yyyy
- */
-function pad2(n) {
-  return String(n).padStart(2, '0');
-}
 
-function formatDDMMYYYY(date) {
-  return `${pad2(date.getDate())}/${pad2(date.getMonth() + 1)}/${date.getFullYear()}`;
-}
-
-function futureDateDDMMYYYY(daysAhead = 30) {
-  const d = new Date();
-  d.setDate(d.getDate() + daysAhead);
-  return formatDDMMYYYY(d);
-}
 
 test('Outlook Calendar - Create all-day event (POM)', async ({ page }) => {
   test.setTimeout(120_000);
@@ -73,9 +59,9 @@ test('Outlook Calendar - Create all-day event (POM)', async ({ page }) => {
     await event.eventBody.setBody(BODY);
   });
 
-  // await test.step("Send all-day event", async () => {
-  //   await event.save();
-  // });
+  await test.step('Save all-day event', async () => {
+    await event.save();
+  });
 });
 
 test('Outlook Calendar - Toggle all-day on/off (POM)', async ({ page }) => {
@@ -136,6 +122,6 @@ test('Outlook Calendar - Toggle all-day on/off (POM)', async ({ page }) => {
     await event.setStartDate(EVENT_DATE);
     // the time panel helper has its own close method
     await event.eventDetails.openTimeDropdown.close();
-    // await event.save();
+    await event.save();
   });
 });

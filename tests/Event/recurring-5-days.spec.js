@@ -1,42 +1,28 @@
+// tests/Event/recurring-5-days.spec.js
+// Tests for configuring recurring events with various frequency settings:
+//   1. Every 5 days
+//   2. Every 1 month on the second Thursday
+//   3. Every 4 weeks on Friday and Saturday
+//   4. Every year with "On the" pattern
+// Each test verifies that the recurrence summary and toolbar state update correctly.
+
 import { test, expect } from '@playwright/test';
 import { CalendarNavigation } from '../../pages/components/CalendarNavigation.js';
-import { NewEventCompose } from '../../pages/outlook/NewEventCompose.js';
-import { CalendarFields } from '../../pages/constants/calendarFields.js';
-
-// ── date helpers ────────────────────────────────────────────────────────────
-
-function formatDate(d) {
-  const dd = String(d.getDate()).padStart(2, '0');
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  return `${dd}/${mm}/${d.getFullYear()}`;
-}
-
-function addMonths(date, months) {
-  const d = new Date(date);
-  const day = d.getDate();
-  d.setMonth(d.getMonth() + months, 1);
-  const maxDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-  d.setDate(Math.min(day, maxDay));
-  return d;
-}
-
-function tomorrow() {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  return d;
-}
+import { NewEventCompose } from '../../pages/page-objects/NewEventCompose.js';
+import { CalendarFields } from '../../pages/selectors/calendarFields.js';
+import { formatDDMMYYYY, tomorrow, addMonths } from '../utils/dateHelpers.js';
 
 
 // ── test 1: every 5 days ────────────────────────────────────────────────────
 
-test('set recurring event - every 5 days', async ({ page }) => {
+test('Recurring — every 5 days: interval, unit, and summary are correct', async ({ page }) => {
   test.setTimeout(120_000);
 
   const TITLE        = `Playwright Recurring 5-Day Event ${Date.now()}`;
-  const START_DATE   = formatDate(tomorrow());
+  const START_DATE   = formatDDMMYYYY(tomorrow());
   const START_TIME   = '09:00';
   const END_TIME     = '09:30';
-  const UNTIL_DATE   = formatDate(addMonths(new Date(), 4));
+  const UNTIL_DATE   = formatDDMMYYYY(addMonths(new Date(), 4));
   const REPEAT_EVERY = 5;
   const FREQUENCY    = 'Days';
 
@@ -89,17 +75,17 @@ test('set recurring event - every 5 days', async ({ page }) => {
 
 // ── test 2: every 1 month on the second Thursday ────────────────────────────
 
-test('set recurring event - every 1 month on the second Thursday', async ({ page }) => {
+test('Recurring — every 1 month on second Thursday: unit and pattern radio are correct', async ({ page }) => {
   test.setTimeout(120_000);
 
-  const TITLE_M       = `Playwright Recurring Monthly Event ${Date.now()}`;
-  const START_DATE_M  = formatDate(tomorrow());
-  const START_TIME_M  = '20:00';
-  const END_TIME_M    = '20:30';
-  const REPEAT_EVERY_M = 1;
-  const FREQUENCY_M   = 'Month';
-  const PATTERN_M     = 'On the';
-  const UNTIL_DATE_M  = formatDate(addMonths(new Date(), 4));
+  const TITLE        = `Playwright Recurring Monthly Event ${Date.now()}`;
+  const START_DATE   = formatDDMMYYYY(tomorrow());
+  const START_TIME   = '20:00';
+  const END_TIME     = '20:30';
+  const REPEAT_EVERY = 1;
+  const FREQUENCY    = 'Month';
+  const PATTERN      = 'On the';
+  const UNTIL_DATE   = formatDDMMYYYY(addMonths(new Date(), 4));
 
   await page.goto('https://outlook.live.com/mail/', { waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('button', { name: /new email/i })).toBeVisible({ timeout: 45_000 });
@@ -111,20 +97,20 @@ test('set recurring event - every 1 month on the second Thursday', async ({ page
   const event = new NewEventCompose(page);
   await event.waitUntilOpen();
 
-  await event.fillTitle(TITLE_M);
+  await event.fillTitle(TITLE);
 
   // date & time
   const time = event.eventDetails.openTimeDropdown;
-  await time.setStartDate(START_DATE_M);
-  await time.setStartTime(START_TIME_M);
-  await time.setEndTime(END_TIME_M);
+  await time.setStartDate(START_DATE);
+  await time.setStartTime(START_TIME);
+  await time.setEndTime(END_TIME);
 
   // enable recurrence once, then configure settings directly on event
   await event.clickRecurrenceOption();
-  await event.setRepeatEvery(REPEAT_EVERY_M);
-  await event.setRecurrenceFrequency(FREQUENCY_M);
-  await event.setFirstPatternStartingWith(PATTERN_M);
-  await event.setRecurrenceUntil(UNTIL_DATE_M);
+  await event.setRepeatEvery(REPEAT_EVERY);
+  await event.setRecurrenceFrequency(FREQUENCY);
+  await event.setFirstPatternStartingWith(PATTERN);
+  await event.setRecurrenceUntil(UNTIL_DATE);
 
   // ── verifications ──────────────────────────────────────────────────────────
 
@@ -132,7 +118,7 @@ test('set recurring event - every 1 month on the second Thursday', async ({ page
   const unitCombobox = page.getByRole('combobox', { name: /unit of time/i });
   expect((await unitCombobox.textContent())?.trim()).toMatch(/month/i);
 
-  // first "On the" radio is checked
+  // "On the" radio is checked (pattern selection)
   const patternRadio = page.getByRole('radio', { name: /^on the/i }).first();
   await expect(patternRadio).toBeChecked({ timeout: 10_000 });
 
@@ -144,17 +130,17 @@ test('set recurring event - every 1 month on the second Thursday', async ({ page
 
 // ── test 3: every 4 weeks on Friday and Saturday ────────────────────────────
 
-test('set recurring event - every 4 weeks on Friday and Saturday', async ({ page }) => {
+test('Recurring — every 4 weeks on Fri + Sat: summary reflects selected days', async ({ page }) => {
   test.setTimeout(120_000);
 
-  const TITLE_W        = `Playwright Recurring Weekly Event ${Date.now()}`;
-  const START_DATE_W   = formatDate(tomorrow());
-  const START_TIME_W   = '16:00';
-  const END_TIME_W     = '16:30';
-  const REPEAT_EVERY_W = 4;
-  const FREQUENCY_W    = 'Weeks';
-  const DAYS_W         = ['Friday', 'Saturday'];
-  const UNTIL_DATE_W   = formatDate(addMonths(new Date(), 4));
+  const TITLE        = `Playwright Recurring Weekly Event ${Date.now()}`;
+  const START_DATE   = formatDDMMYYYY(tomorrow());
+  const START_TIME   = '16:00';
+  const END_TIME     = '16:30';
+  const REPEAT_EVERY = 4;
+  const FREQUENCY    = 'Weeks';
+  const DAYS         = ['Friday', 'Saturday'];
+  const UNTIL_DATE   = formatDDMMYYYY(addMonths(new Date(), 4));
 
   await page.goto('https://outlook.live.com/mail/', { waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('button', { name: /new email/i })).toBeVisible({ timeout: 45_000 });
@@ -166,25 +152,25 @@ test('set recurring event - every 4 weeks on Friday and Saturday', async ({ page
   const event = new NewEventCompose(page);
   await event.waitUntilOpen();
 
-  await event.fillTitle(TITLE_W);
+  await event.fillTitle(TITLE);
 
   // date & time
   const time = event.eventDetails.openTimeDropdown;
-  await time.setStartDate(START_DATE_W);
-  await time.setStartTime(START_TIME_W);
-  await time.setEndTime(END_TIME_W);
+  await time.setStartDate(START_DATE);
+  await time.setStartTime(START_TIME);
+  await time.setEndTime(END_TIME);
 
   // enable recurrence then configure settings
   // setWeeklyDays must come last — earlier calls can auto-select today's day
   await event.clickRecurrenceOption();
-  await event.setRepeatEvery(REPEAT_EVERY_W);
-  await event.setRecurrenceFrequency(FREQUENCY_W);
-  await event.setRecurrenceUntil(UNTIL_DATE_W);
-  await event.setWeeklyDays(DAYS_W);
+  await event.setRepeatEvery(REPEAT_EVERY);
+  await event.setRecurrenceFrequency(FREQUENCY);
+  await event.setRecurrenceUntil(UNTIL_DATE);
+  await event.setWeeklyDays(DAYS);
 
   // ── verifications ──────────────────────────────────────────────────────────
 
-  // summary button mentions "4 week"
+  // summary button mentions "4 week" (with selected days)
   const summaryLocator = page.locator('button:has-text("4 week"), button[aria-label*="4 week" i]').first();
   await expect(summaryLocator).toBeVisible({ timeout: 10_000 });
   const summaryText = await summaryLocator.getAttribute('aria-label') ?? await summaryLocator.textContent();
@@ -198,14 +184,14 @@ test('set recurring event - every 4 weeks on Friday and Saturday', async ({ page
 
 // ── test 4: every year, first "On the" pattern, end date +7 months ──────────
 
-test('set recurring event - every year with On the pattern', async ({ page }) => {
+test('Recurring — every year with "On the" pattern: unit and radio are correct', async ({ page }) => {
   test.setTimeout(120_000);
 
-  const TITLE_Y      = `Playwright Recurring Yearly Event ${Date.now()}`;
-  const START_DATE_Y = formatDate(tomorrow());
-  const START_TIME_Y = '10:00';
-  const END_TIME_Y   = '10:30';
-  const UNTIL_DATE_Y = formatDate(addMonths(new Date(), 7));
+  const TITLE      = `Playwright Recurring Yearly Event ${Date.now()}`;
+  const START_DATE = formatDDMMYYYY(tomorrow());
+  const START_TIME = '10:00';
+  const END_TIME   = '10:30';
+  const UNTIL_DATE = formatDDMMYYYY(addMonths(new Date(), 7));
 
   await page.goto('https://outlook.live.com/mail/', { waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('button', { name: /new email/i })).toBeVisible({ timeout: 45_000 });
@@ -217,13 +203,13 @@ test('set recurring event - every year with On the pattern', async ({ page }) =>
   const event = new NewEventCompose(page);
   await event.waitUntilOpen();
 
-  await event.fillTitle(TITLE_Y);
+  await event.fillTitle(TITLE);
 
   // date & time
   const time = event.eventDetails.openTimeDropdown;
-  await time.setStartDate(START_DATE_Y);
-  await time.setStartTime(START_TIME_Y);
-  await time.setEndTime(END_TIME_Y);
+  await time.setStartDate(START_DATE);
+  await time.setStartTime(START_TIME);
+  await time.setEndTime(END_TIME);
 
   // enable recurrence, set yearly frequency (no "repeat every" for year)
   await event.clickRecurrenceOption();
@@ -233,7 +219,7 @@ test('set recurring event - every year with On the pattern', async ({ page }) =>
   await event.setFirstPatternStartingWith('On the');
 
   // click "Choose an end date" and pick today + 7 months
-  await event.setRecurrenceUntil(UNTIL_DATE_Y);
+  await event.setRecurrenceUntil(UNTIL_DATE);
 
   // ── verifications ──────────────────────────────────────────────────────────
 

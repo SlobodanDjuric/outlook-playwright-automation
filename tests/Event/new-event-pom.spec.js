@@ -1,21 +1,8 @@
-// tests/send-new-event-pom.spec.js
+// tests/Event/new-event-pom.spec.js
 import { test, expect } from '@playwright/test';
 import { CalendarNavigation } from '../../pages/components/CalendarNavigation.js';
-import { NewEventCompose } from '../../pages/outlook/NewEventCompose.js';
-
-function pad2(n) {
-  return String(n).padStart(2, '0');
-}
-
-function formatDDMMYYYY(date) {
-  return `${pad2(date.getDate())}/${pad2(date.getMonth() + 1)}/${date.getFullYear()}`;
-}
-
-function futureDateDDMMYYYY(daysAhead = 30) {
-  const d = new Date();
-  d.setDate(d.getDate() + daysAhead);
-  return formatDDMMYYYY(d);
-}
+import { NewEventCompose } from '../../pages/page-objects/NewEventCompose.js';
+import { futureDateDDMMYYYY } from '../utils/dateHelpers.js';
 
 test('Outlook Calendar - Send new event (POM)', async ({ page }) => {
   test.setTimeout(120_000);
@@ -55,7 +42,7 @@ test('Outlook Calendar - Send new event (POM)', async ({ page }) => {
   await event.eventDetails.openTimeDropdown.setStartDate(START_DATE);
   await event.eventDetails.openTimeDropdown.setStartTime(START_TIME);
   await event.eventDetails.openTimeDropdown.setEndTime(END_TIME);
-  await event.eventDetails.openTimeDropdown.setAllDay(true); // ensure it's an event, not an all-day
+  await event.eventDetails.openTimeDropdown.setAllDay(false); // ensure it's a timed event, not an all-day event
   // close the panel when done
   await event.eventDetails.openTimeDropdown.close();
 

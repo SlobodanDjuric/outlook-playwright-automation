@@ -1,25 +1,14 @@
+// tests/Event/response-options.spec.js
+// Tests the "Response options" menu in the New Event compose dialog:
+// - toggling Request Responses, Allow Forwarding, Hide Attendee List
+// - revealing and filling the optional attendees field
+// - enabling the "In-person" location setting (which prefixes the title with [In-person])
+
 import { test, expect } from '@playwright/test';
 import { CalendarNavigation } from '../../pages/components/CalendarNavigation.js';
-import { NewEventCompose } from '../../pages/outlook/NewEventCompose.js';
+import { NewEventCompose } from '../../pages/page-objects/NewEventCompose.js';
 
-function pad2(n) {
-  return String(n).padStart(2, '0');
-}
-
-function formatDDMMYYYY(date) {
-  return `${pad2(date.getDate())}/${pad2(date.getMonth() + 1)}/${date.getFullYear()}`;
-}
-
-function futureDateDDMMYYYY(daysAhead = 30) {
-  const d = new Date();
-  d.setDate(d.getDate() + daysAhead);
-  return formatDDMMYYYY(d);
-}
-
-// because this is a minimal test we only need a single attendee and basic
-// navigation; most of the complex interactions are encapsulated in the POM.
-
-test('Response options toggles behave correctly', async ({ page }) => {
+test('Response options — toggles and optional attendees update the compose form correctly', async ({ page }) => {
   test.setTimeout(90_000);
 
   const TITLE = `Resp options ${Date.now()}`;

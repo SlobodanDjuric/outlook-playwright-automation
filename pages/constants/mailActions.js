@@ -50,3 +50,6 @@ export const MailContextActions = Object.freeze({
   // Advanced submenu
   AdvancedActions: 'Advanced actions',
 });
+
+// Alias: some test files import as MailActions — both names are equivalent.
+export const MailActions = MailContextActions;

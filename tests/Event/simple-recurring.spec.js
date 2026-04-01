@@ -1,11 +1,14 @@
+// tests/Event/simple-recurring.spec.js
+// Smoke test: verifies that clicking the Recurring button in the time dropdown
+// sets a 3-week repeat interval, updates the summary label, and marks the
+// toolbar "Series" radio as checked.
+
 import { test, expect } from '@playwright/test';
 import { CalendarNavigation } from '../../pages/components/CalendarNavigation.js';
-import { NewEventCompose } from '../../pages/outlook/NewEventCompose.js';
-import { CalendarFields } from '../../pages/constants/calendarFields.js';
+import { NewEventCompose } from '../../pages/page-objects/NewEventCompose.js';
+import { CalendarFields } from '../../pages/selectors/calendarFields.js';
 
-// quick smoke test for the recurrence button
-
-test('open event and click Recurring button', async ({ page }) => {
+test('Recurring — set 3-week interval and verify summary + toolbar state', async ({ page }) => {
   // increase timeout just in case the calendar is slow
   test.setTimeout(90_000);
 
