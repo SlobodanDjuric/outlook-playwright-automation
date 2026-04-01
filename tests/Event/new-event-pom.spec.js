@@ -4,8 +4,9 @@ import { CalendarNavigation } from '../../pages/components/CalendarNavigation.js
 import { NewEventCompose } from '../../pages/page-objects/NewEventCompose.js';
 import { futureDateDDMMYYYY } from '../utils/dateHelpers.js';
 
+test.use({ timeout: 120_000 });
+
 test('Outlook Calendar - Send new event (POM)', async ({ page }) => {
-  test.setTimeout(120_000);
 
   const TITLE = `Playwright POM Event ${Date.now()}`;
   const ATTENDEE = 'test@example.com';

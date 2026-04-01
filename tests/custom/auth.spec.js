@@ -6,8 +6,9 @@
 
 import { test } from '@playwright/test';
 
+test.use({ timeout: 180_000 });
+
 test('Login and save storage state', async ({ page }) => {
-  test.setTimeout(180_000);
 
   await page.goto('https://outlook.live.com/', {
     waitUntil: 'domcontentloaded',

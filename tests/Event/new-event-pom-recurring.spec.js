@@ -4,10 +4,9 @@ import { CalendarNavigation } from '../../pages/components/CalendarNavigation.js
 import { NewEventCompose } from '../../pages/page-objects/NewEventCompose.js';
 import { futureDateDDMMYYYY } from '../utils/dateHelpers.js';
 
-
+test.use({ timeout: 120_000 });
 
 test('Outlook Calendar - Create recurring event (every 3 months on fourth Friday) - POM', async ({ page }) => {
-  test.setTimeout(120_000);
 
   // Test data
   const TITLE = `Playwright Recurring Event ${Date.now()}`;
@@ -61,7 +60,6 @@ test('Outlook Calendar - Create recurring event (every 3 months on fourth Friday
 // weekly event
 
 test('Outlook Calendar - Create weekly recurring event (every 2 weeks) - POM', async ({ page }) => {
-  test.setTimeout(120_000);
 
   const TITLE = `Playwright Weekly Recurring ${Date.now()}`;
   const ATTENDEE = 'weekly@example.com';
@@ -107,7 +105,6 @@ test('Outlook Calendar - Create weekly recurring event (every 2 weeks) - POM', a
 // daily event
 
 test('Outlook Calendar - Create daily recurring event (every 5 days) - POM', async ({ page }) => {
-  test.setTimeout(120_000);
 
   const TITLE = `Playwright Daily Recurring ${Date.now()}`;
   const ATTENDEE = 'daily@example.com';

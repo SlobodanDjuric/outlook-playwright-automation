@@ -315,11 +315,11 @@ class EventToolbar {
       })
       .first();
     await btn.click();
-    try {
-      const option = this.page.getByText(status, { exact: true }).first();
-      await option.waitFor({ state: 'visible', timeout: 2_000 });
-      await option.click();
-    } catch (e) {}
+    const statusOption = this.page.getByText(status, { exact: true }).first();
+    if (!(await statusOption.isVisible({ timeout: 2_000 }).catch(() => false))) {
+      throw new Error(`Status option "${status}" not visible after opening dropdown`);
+    }
+    await statusOption.click();
   }
 
   /**
@@ -338,11 +338,11 @@ class EventToolbar {
     }
     const btn = this.page.locator(CalendarFields.ReminderButton).first();
     await btn.click();
-    try {
-      const option = this.page.getByText(optionText, { exact: true }).first();
-      await option.waitFor({ state: 'visible', timeout: 2_000 });
-      await option.click();
-    } catch (e) {}
+    const reminderOption = this.page.getByText(optionText, { exact: true }).first();
+    if (!(await reminderOption.isVisible({ timeout: 2_000 }).catch(() => false))) {
+      throw new Error(`Reminder option "${optionText}" not visible after opening dropdown`);
+    }
+    await reminderOption.click();
   }
 
   /**
@@ -432,11 +432,11 @@ class EventToolbar {
   async setPrivacy(privacyOption) {
     const btn = this.page.locator(CalendarFields.PrivacyButton).first();
     await btn.click();
-    try {
-      const option = this.page.getByText(privacyOption, { exact: true }).first();
-      await option.waitFor({ state: 'visible', timeout: 2_000 });
-      await option.click();
-    } catch (e) {}
+    const privacyOptionEl = this.page.getByText(privacyOption, { exact: true }).first();
+    if (!(await privacyOptionEl.isVisible({ timeout: 2_000 }).catch(() => false))) {
+      throw new Error(`Privacy option "${privacyOption}" not visible after opening dropdown`);
+    }
+    await privacyOptionEl.click();
   }
 }
 
@@ -568,10 +568,8 @@ class MakeRecurring {
         return helpers;
       }
     }
-    try {
-      await this.owner.clickSeriesButton();
-      return helpers;
-    } catch (e) {}
+    const seriesWorked = await this.owner.clickSeriesButton().then(() => true).catch(() => false);
+    if (seriesWorked) return helpers;
     const availableElements = await this.page
       .locator('button, a, [role="button"], label')
       .evaluateAll((els) =>

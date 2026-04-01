@@ -4,10 +4,9 @@ import { CalendarNavigation } from '../../pages/components/CalendarNavigation.js
 import { NewEventCompose } from '../../pages/page-objects/NewEventCompose.js';
 import { futureDateDDMMYYYY } from '../utils/dateHelpers.js';
 
-
+test.use({ timeout: 120_000 });
 
 test('Outlook Calendar - Create all-day event (POM)', async ({ page }) => {
-  test.setTimeout(120_000);
 
   // Test data
   const TITLE = `Playwright All-Day Event ${Date.now()}`;
@@ -65,7 +64,6 @@ test('Outlook Calendar - Create all-day event (POM)', async ({ page }) => {
 });
 
 test('Outlook Calendar - Toggle all-day on/off (POM)', async ({ page }) => {
-  test.setTimeout(120_000);
 
   const TITLE = `Playwright Toggle Test ${Date.now()}`;
   const ATTENDEE = 'test@example.com';

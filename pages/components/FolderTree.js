@@ -1,12 +1,5 @@
 import { expect } from '@playwright/test';
-
-// ---------------------------------------------------------------------------
-// helpers
-// ---------------------------------------------------------------------------
-
-function escapeRegExp(str) {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
+import { escapeRegExp } from '../utils/textHelpers.js';
 
 /**
  * FolderTreeContextMenu
@@ -47,53 +40,7 @@ export class FolderTreeContextMenu {
    * use a loose contains-match rather than an exact one.
    */
   async openForFolder(folderName) {
-    const tree = this.page.getByRole('tree').first();
-    const allItems = tree.getByRole('treeitem', {
-      name: new RegExp(escapeRegExp(folderName), 'i'),
-    });
-
-    await allItems.first().waitFor({ state: 'visible', timeout: 30_000 });
-
-    const count = await allItems.count();
-    let targetItem = allItems.first();
-
-    if (count > 1) {
-      // Walk through candidates and prefer one whose ancestors do NOT
-      // include the Favourites group (identifiable by aria-label).
-      for (let i = 0; i < count; i++) {
-        const item = allItems.nth(i);
-        const isInFavourites = await item
-          .evaluate((el) => {
-            // Walk up to find the nearest [role="group"] ancestor.
-            // Its accessible name comes from aria-label OR aria-labelledby
-            // (Outlook uses aria-labelledby pointing to a sibling header treeitem).
-            const group = el.closest('[role="group"]');
-            if (!group) return false;
-
-            // Check aria-label directly
-            const directLabel = (group.getAttribute('aria-label') || '').toLowerCase();
-            if (directLabel.includes('favou')) return true;
-
-            // Check aria-labelledby → resolve referenced elements
-            const labelledBy = group.getAttribute('aria-labelledby');
-            if (labelledBy) {
-              for (const id of labelledBy.trim().split(/\s+/)) {
-                const ref = document.getElementById(id);
-                if (ref && (ref.textContent || '').toLowerCase().includes('favou')) return true;
-              }
-            }
-
-            return false;
-          })
-          .catch(() => false);
-
-        if (!isInFavourites) {
-          targetItem = item;
-          break;
-        }
-      }
-    }
-
+    const targetItem = await this._getTreeItem(folderName);
     await expect(targetItem).toBeVisible({ timeout: 30_000 });
     await targetItem.click({ button: 'right' });
     // wait for the menu to be painted

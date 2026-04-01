@@ -12,11 +12,11 @@ import { NewEventCompose } from '../../pages/page-objects/NewEventCompose.js';
 import { CalendarFields } from '../../pages/selectors/calendarFields.js';
 import { formatDDMMYYYY, tomorrow, addMonths } from '../utils/dateHelpers.js';
 
+test.use({ timeout: 120_000 });
 
 // ── test 1: every 5 days ────────────────────────────────────────────────────
 
 test('Recurring — every 5 days: interval, unit, and summary are correct', async ({ page }) => {
-  test.setTimeout(120_000);
 
   const TITLE        = `Playwright Recurring 5-Day Event ${Date.now()}`;
   const START_DATE   = formatDDMMYYYY(tomorrow());
@@ -76,7 +76,6 @@ test('Recurring — every 5 days: interval, unit, and summary are correct', asyn
 // ── test 2: every 1 month on the second Thursday ────────────────────────────
 
 test('Recurring — every 1 month on second Thursday: unit and pattern radio are correct', async ({ page }) => {
-  test.setTimeout(120_000);
 
   const TITLE        = `Playwright Recurring Monthly Event ${Date.now()}`;
   const START_DATE   = formatDDMMYYYY(tomorrow());
@@ -131,7 +130,6 @@ test('Recurring — every 1 month on second Thursday: unit and pattern radio are
 // ── test 3: every 4 weeks on Friday and Saturday ────────────────────────────
 
 test('Recurring — every 4 weeks on Fri + Sat: summary reflects selected days', async ({ page }) => {
-  test.setTimeout(120_000);
 
   const TITLE        = `Playwright Recurring Weekly Event ${Date.now()}`;
   const START_DATE   = formatDDMMYYYY(tomorrow());
@@ -185,7 +183,6 @@ test('Recurring — every 4 weeks on Fri + Sat: summary reflects selected days',
 // ── test 4: every year, first "On the" pattern, end date +7 months ──────────
 
 test('Recurring — every year with "On the" pattern: unit and radio are correct', async ({ page }) => {
-  test.setTimeout(120_000);
 
   const TITLE      = `Playwright Recurring Yearly Event ${Date.now()}`;
   const START_DATE = formatDDMMYYYY(tomorrow());

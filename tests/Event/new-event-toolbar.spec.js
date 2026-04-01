@@ -8,13 +8,14 @@ import { CalendarNavigation } from '../../pages/components/CalendarNavigation.js
 import { NewEventCompose } from '../../pages/page-objects/NewEventCompose.js';
 import { Status, Reminder, Privacy } from '../../pages/constants/calendarOptions.js';
 
+test.use({ timeout: 120_000 });
+
 // This test covers a variety of toolbar interactions on the "New event" dialog
 // including toggling into a series, cycling through availability/status
 // options, picking different reminder values and flipping the private toggle.
 // It only fills a title and then saves the event (no attendees or body).
 
 test('Outlook Calendar - toolbar buttons (series/status/reminder/privacy)', async ({ page }) => {
-  test.setTimeout(120_000);
 
   const TITLE = `Toolbar testing ${Date.now()}`;
 

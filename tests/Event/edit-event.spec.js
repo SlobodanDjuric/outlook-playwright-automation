@@ -29,7 +29,6 @@ test.use({ timeout: 180_000 });
 
 test('Edit existing event — title update persists on calendar', async ({ calendarPage }) => {
   const { page, nav } = calendarPage;
-  test.setTimeout(180_000);
 
   const ORIGINAL_TITLE = `Edit Test ${Date.now()}`;
   const UPDATED_TITLE = `${ORIGINAL_TITLE} [edited]`;

@@ -8,8 +8,9 @@ import { test, expect } from '@playwright/test';
 import { CalendarNavigation } from '../../pages/components/CalendarNavigation.js';
 import { NewEventCompose } from '../../pages/page-objects/NewEventCompose.js';
 
+test.use({ timeout: 90_000 });
+
 test('Response options — toggles and optional attendees update the compose form correctly', async ({ page }) => {
-  test.setTimeout(90_000);
 
   const TITLE = `Resp options ${Date.now()}`;
   const ATTENDEE = 'foo@example.com';

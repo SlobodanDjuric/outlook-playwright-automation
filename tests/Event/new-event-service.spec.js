@@ -6,8 +6,9 @@ import { test, expect } from '@playwright/test';
 import { EventService } from '../../pages/page-objects/EventService.js';
 import { futureDateDDMMYYYY } from '../utils/dateHelpers.js';
 
+test.use({ timeout: 120_000 });
+
 test('Outlook Calendar - Send new event (Service)', async ({ page }) => {
-  test.setTimeout(120_000);
 
   await page.goto('https://outlook.live.com/mail/', {
     waitUntil: 'domcontentloaded',

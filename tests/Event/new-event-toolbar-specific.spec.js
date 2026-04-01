@@ -8,8 +8,9 @@ import { CalendarNavigation } from '../../pages/components/CalendarNavigation.js
 import { NewEventCompose } from '../../pages/page-objects/NewEventCompose.js';
 import { EventType, Status, Reminder, Privacy } from '../../pages/constants/calendarOptions.js';
 
+test.use({ timeout: 120_000 });
+
 test('Outlook Calendar - toolbar with specific event config', async ({ page }) => {
-  test.setTimeout(120_000);
 
   const TITLE = `Specific Toolbar Config ${Date.now()}`;
 

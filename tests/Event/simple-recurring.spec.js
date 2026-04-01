@@ -8,9 +8,9 @@ import { CalendarNavigation } from '../../pages/components/CalendarNavigation.js
 import { NewEventCompose } from '../../pages/page-objects/NewEventCompose.js';
 import { CalendarFields } from '../../pages/selectors/calendarFields.js';
 
+test.use({ timeout: 90_000 });
+
 test('Recurring — set 3-week interval and verify summary + toolbar state', async ({ page }) => {
-  // increase timeout just in case the calendar is slow
-  test.setTimeout(90_000);
 
   await page.goto('https://outlook.live.com/mail/', { waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('button', { name: /new email/i })).toBeVisible({ timeout: 45_000 });

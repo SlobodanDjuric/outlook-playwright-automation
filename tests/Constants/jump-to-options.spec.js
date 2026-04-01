@@ -10,10 +10,11 @@ import { test } from '../fixtures.js';
 import { SortOptions, JumpToOptions } from '../../pages/constants/mailOptions.js';
 import { Folders } from '../../pages/constants/folders.js';
 
+test.use({ timeout: 90_000 });
+
 // ── Groups with Jump To ───────────────────────────────────────────────────────
 
 test('JumpToOptions.ByDate — all options visible when sorted by Date', async ({ mailPage }) => {
-  test.setTimeout(90_000);
   const { page, folder } = mailPage;
 
   await folder.open(Folders.DeletedItems);
@@ -27,7 +28,6 @@ test('JumpToOptions.ByDate — all options visible when sorted by Date', async (
 });
 
 test('JumpToOptions.ByCategory — all options visible when sorted by Category', async ({ mailPage }) => {
-  test.setTimeout(90_000);
   const { page, folder } = mailPage;
 
   await folder.open(Folders.DeletedItems);
@@ -42,7 +42,6 @@ test('JumpToOptions.ByCategory — all options visible when sorted by Category',
 });
 
 test('JumpToOptions.BySize — all options visible when sorted by Size', async ({ mailPage }) => {
-  test.setTimeout(90_000);
   const { page, folder } = mailPage;
 
   await folder.open(Folders.DeletedItems);
@@ -57,7 +56,6 @@ test('JumpToOptions.BySize — all options visible when sorted by Size', async (
 });
 
 test('JumpToOptions.ByImportance — all options visible when sorted by Importance', async ({ mailPage }) => {
-  test.setTimeout(90_000);
   const { page, folder } = mailPage;
 
   await folder.open(Folders.DeletedItems);
@@ -82,7 +80,6 @@ const NO_JUMP_TO_SORTS = [
 
 for (const sortOption of NO_JUMP_TO_SORTS) {
   test(`Jump To not available when sorted by ${sortOption}`, async ({ mailPage }) => {
-    test.setTimeout(90_000);
     const { folder } = mailPage;
 
     await folder.open(Folders.DeletedItems);

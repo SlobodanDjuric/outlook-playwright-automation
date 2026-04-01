@@ -12,8 +12,9 @@ import { test, expect } from '@playwright/test';
  *
  * Tests use raw locators and direct Playwright actions.
  */
+test.use({ timeout: 120_000 });
+
 test('Outlook Calendar - Create and send new event', async ({ page }) => {
-  test.setTimeout(120_000);
 
   const TITLE = `Playwright Test Event ${Date.now()}`;
   const ATTENDEE = 'test@example.com';
